@@ -1,4 +1,7 @@
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 1. SELECCIÓN DE ELEMENTOS DEL HTML ---
+// ********************************************************************************************************************************************************************************************************************************************
+
 // Conectamos el JavaScript con los elementos del HTML para poder manipularlos.
 // Imagina que son los mandos a distancia para controlar la tele (que es el HTML).
 const monthDisplay = document.getElementById('current-month-display');
@@ -46,12 +49,10 @@ const SHIFT_COLORS = [
 
 
 
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 2. ESTADO DE LA APLICACIÓN ---
+// ********************************************************************************************************************************************************************************************************************************************
+
 // Aquí guardamos la fecha que se está mostrando en el calendario.
 // 'let' significa que su valor puede cambiar (cuando cambiemos de mes).
 let currentDate = new Date();
@@ -82,10 +83,9 @@ let shiftClosures = {};
 
 
 
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 3. FUNCIÓN PRINCIPAL PARA DIBUJAR EL CALENDARIO ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 // Esta función es como una receta que se ejecuta cada vez que cambiamos de mes.
 // --- FUNCIÓN PRINCIPAL PARA DIBUJAR EL CALENDARIO (VERSIÓN MEJORADA Y DOCUMENTADA) ---
@@ -141,6 +141,8 @@ function createDayCell(date, isOtherMonth) {
     // Creamos los elementos básicos de la celda
     const dayCell = document.createElement('div');
     dayCell.classList.add('day-cell');
+	// Guardamos la fecha en formato YYYY-MM-DD como un atributo
+	dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     if (isOtherMonth) {
         dayCell.classList.add('empty');
     }
@@ -470,20 +472,10 @@ function populateOvertimeSelector() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 4. EVENTOS DE CLICK (INTERACTIVIDAD) ---
+// ********************************************************************************************************************************************************************************************************************************************
+
 // Le decimos al programa qué hacer cuando el usuario hace clic en los botones.
 
 // Clic en el botón de mes anterior
@@ -507,35 +499,9 @@ monthDisplay.addEventListener('click', () => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 5. LLAMADA INICIAL ---
+// ********************************************************************************************************************************************************************************************************************************************
 loadShifts();
 loadQuadrants();
 loadOvertimeRates();
@@ -548,21 +514,9 @@ renderCalendar();
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 6. NAVEGACIÓN ENTRE PANTALLAS ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 // Evento para cuando se hace clic en el botón de ajustes (rueda ⚙️)
 settingsButton.addEventListener('click', () => {
@@ -584,18 +538,9 @@ backToCalendarButton.addEventListener('click', () => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 7. NAVEGACIÓN DE LA SECCIÓN DE TURNOS ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 // Evento para cuando se hace clic en "🎨 Turnos" en el menú de ajustes
 menuItemShifts.addEventListener('click', () => {
@@ -624,15 +569,9 @@ cancelShiftFormButton.addEventListener('click', () => {
 
 
 
-
-
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 8. LÓGICA DEL FORMULARIO DE TURNOS ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 shiftForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -693,9 +632,10 @@ shiftForm.addEventListener('submit', (event) => {
 
 
 
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 9. LÓGICA DEL SELECTOR DE COLOR ---
+// ********************************************************************************************************************************************************************************************************************************************
+
 colorSelector.addEventListener('click', (event) => {
     // Nos aseguramos de que se ha hecho clic en un círculo de color
     if (event.target.classList.contains('color-dot')) {
@@ -712,13 +652,9 @@ colorSelector.addEventListener('click', (event) => {
 
 
 
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 10. LÓGICA PARA EDITAR Y ELIMINAR TURNOS ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 shiftsListContainer.addEventListener('click', (event) => {
     // Primero, comprobamos si el elemento pulsado es un botón de "Eliminar"
@@ -790,10 +726,9 @@ shiftsListContainer.addEventListener('click', (event) => {
 });
 
 
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 11. NAVEGACIÓN DE LA SECCIÓN DE CUADRANTE ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 // Evento para cuando se hace clic en "🔄 Cuadrante" en el menú de ajustes
 menuItemQuadrant.addEventListener('click', () => {
@@ -830,11 +765,10 @@ quadrantWeeksInput.addEventListener('input', () => {
 });
 
 
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 12. LÓGICA DEL FORMULARIO DE CUADRANTE ---
+// ********************************************************************************************************************************************************************************************************************************************
+
 const quadrantForm = document.getElementById('quadrant-form');
 quadrantForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -903,16 +837,9 @@ quadrantForm.addEventListener('submit', (event) => {
 });
 
 
-
-
-
-
-
-
-
-
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 13. LÓGICA PARA EDITAR Y ELIMINAR CUADRANTES ---
+// ********************************************************************************************************************************************************************************************************************************************
 
 allQuadrantsList.addEventListener('click', (event) => {
     // Comprobamos si se ha pulsado un botón de "Eliminar"
@@ -1006,8 +933,6 @@ activeQuadrantDisplay.addEventListener('click', (event) => {
 
 
 
-
-
 function isColorDark(hexColor) {
     if (!hexColor) return false;
     const color = hexColor.substring(1); // quitamos #
@@ -1021,12 +946,9 @@ function isColorDark(hexColor) {
 
 
 
-
-
-
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- SECCIÓN 14: LÓGICA DE HORAS EXTRAS (EDICIÓN EN LÍNEA) ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 
 // --- Elementos de la sección ---
 const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
@@ -1192,8 +1114,9 @@ overtimeListContainer.addEventListener('click', (event) => {
 
 
 
-
+// ********************************************************************************************************************************************************************************************************************************************
 // --- 15. LÓGICA DE LA CASILLA DE PAGO POR HORAS (VERSIÓN MEJORADA) ---
+// ********************************************************************************************************************************************************************************************************************************************
 shiftIsPaidCheckbox.addEventListener('change', () => {
     // Si el usuario marca la casilla...
     if (shiftIsPaidCheckbox.checked) {
@@ -1222,16 +1145,9 @@ shiftIsPaidCheckbox.addEventListener('change', () => {
 
 
 
-
-
-
-
-
-
-
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- SECCIÓN 16: LÓGICA DE VACACIONES ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 
 // --- Elementos de la sección ---
 const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
@@ -1372,11 +1288,9 @@ vacationsListContainer.addEventListener('click', (event) => {
 
 
 
-
-
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- SECCIÓN 17: LÓGICA DE CIERRE DE TURNO (VERSIÓN SIMPLE) ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 
 // --- Elementos de la sección ---
 const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
@@ -1467,66 +1381,9 @@ function isShiftClosureDay(date) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- SECCIÓN FINAL: LÓGICA PARA GESTOS TÁCTILES (SWIPE) ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 
 let touchStartX = 0;
 let touchEndX = 0;
@@ -1569,3 +1426,95 @@ function handleSwipe() {
 
 
 
+// ********************************************************************************************************************************************************************************************************************************************
+// --- LÓGICA DE LA VENTANA MODAL ---
+// ********************************************************************************************************************************************************************************************************************************************
+
+
+// --- Elementos de la modal ---
+const dayModal = document.getElementById('day-modal');
+const modalDate = document.getElementById('modal-date');
+const modalShiftName = document.getElementById('modal-shift-name');
+const modalShiftTime = document.getElementById('modal-shift-time');
+const modalTotalHours = document.getElementById('modal-total-hours');
+const modalEarnings = document.getElementById('modal-earnings');
+const modalShiftComments = document.getElementById('modal-shift-comments');
+const modalCloseButton = document.getElementById('modal-close-button');
+const modalCloseButtonFooter = document.getElementById('modal-close-button-footer');
+
+// --- Funciones de cálculo ---
+function calculateTotalHours(startTime, endTime) {
+    if (!startTime || !endTime) return 'N/A';
+    const start = new Date(`1970-01-01T${startTime}`);
+    const end = new Date(`1970-01-01T${endTime}`);
+    let diff = end - start;
+    if (diff < 0) { // Si el turno cruza la medianoche
+        diff += 24 * 60 * 60 * 1000;
+    }
+    const hours = diff / (1000 * 60 * 60);
+    return `${hours.toFixed(2)}h`;
+}
+
+function calculateEarnings(turn) {
+    if (!turn || !turn.isPaid || !turn.overtimeRateId) return '0.00€';
+    const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
+    if (!rate) return 'Tarifa no encontrada';
+    
+    const hoursStr = calculateTotalHours(turn.startTime, turn.endTime);
+    const hours = parseFloat(hoursStr);
+    const earnings = hours * rate.price;
+    return `${earnings.toFixed(2)}€`;
+}
+
+// --- Lógica para abrir la modal ---
+calendarGrid.addEventListener('click', (event) => {
+    const dayCell = event.target.closest('.day-cell');
+    if (dayCell && dayCell.dataset.date) {
+        const dateStr = dayCell.dataset.date;
+        const date = new Date(dateStr + 'T00:00:00');
+        
+        // Formateamos la fecha para el título
+        modalDate.textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Buscamos la información del día
+        const turn = getTurnForDate(date);
+        const onVacation = isDateOnVacation(date);
+        const isClosure = isShiftClosureDay(date);
+
+        if (onVacation) {
+            modalShiftName.textContent = 'Vacaciones';
+            modalShiftTime.textContent = 'Día completo';
+            modalTotalHours.textContent = 'N/A';
+            modalEarnings.textContent = 'N/A';
+            modalShiftComments.textContent = 'Periodo de vacaciones.';
+        } else if (turn) {
+            modalShiftName.textContent = turn.name;
+            modalShiftTime.textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
+            modalTotalHours.textContent = calculateTotalHours(turn.startTime, turn.endTime);
+            modalEarnings.textContent = calculateEarnings(turn);
+            modalShiftComments.textContent = turn.comments || 'Sin comentarios.';
+        } else {
+            modalShiftName.textContent = 'Libre';
+            modalShiftTime.textContent = 'Día completo';
+            modalTotalHours.textContent = 'N/A';
+            modalEarnings.textContent = 'N/A';
+            modalShiftComments.textContent = 'Día no trabajado.';
+        }
+        
+        dayModal.classList.remove('hidden');
+    }
+});
+
+// --- Lógica para cerrar la modal ---
+function closeModal() {
+    dayModal.classList.add('hidden');
+}
+
+modalCloseButton.addEventListener('click', closeModal);
+modalCloseButtonFooter.addEventListener('click', closeModal);
+dayModal.addEventListener('click', (event) => {
+    // Si se hace clic en el fondo oscuro, se cierra
+    if (event.target.id === 'day-modal') {
+        closeModal();
+    }
+});

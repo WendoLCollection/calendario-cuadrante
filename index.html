@@ -311,6 +311,44 @@
 
 <!-- *************** Horas extra   *************************-->
 
+<!-- *************** ventana modal*************************-->
+<div id="day-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2 id="modal-date"></h2>
+            <button id="modal-close-button" class="header-button">×</button>
+        </header>
+        <main class="modal-body">
+            <div class="modal-section">
+                <h3>Información del Turno</h3>
+                <div class="info-grid">
+                    <span>Turno:</span> <span id="modal-shift-name">--</span>
+					<span>Ganancias:</span> <span id="modal-earnings">--</span>
+					
+					<span>Horario:</span> <span id="modal-shift-time">--</span>
+					<span>Totales:</span> <span id="modal-total-hours">--</span>
+                    
+                    
+                </div>
+            </div>
+            <div class="modal-section">
+                <h3>Comentarios del Turno</h3>
+                <p id="modal-shift-comments">--</p>
+            </div>
+        </main>
+        <footer class="modal-footer">
+            <!-- <button id="modal-edit-button" class="action-button">Editar</button>-->
+            <button id="modal-close-button-footer" class="button-primary">Cerrar</button>
+        </footer>
+    </div>
+</div>
+<!-- *************** ventana modal*************************-->
+
+
+
+
+
+
 
 </div> <script src="script.js"></script>
 </body>
