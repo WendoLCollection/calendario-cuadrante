@@ -32,7 +32,7 @@ const quadrantWeeksInput = document.getElementById('quadrant-weeks');
 const allQuadrantsList = document.getElementById('all-quadrants-list');
 const shiftIsPaidCheckbox = document.getElementById('shift-is-paid');
 const hourlyRateContainer = document.getElementById('hourly-rate-container');
-
+const activeQuadrantDisplay = document.getElementById('active-quadrant-display');
 
 
 
@@ -77,8 +77,8 @@ let vacations = [];
 
 
 // --- Base de datos y estado ---
-let shiftClosures = {}; // Objeto para guardar { 'año-mes': día }
-let displayedClosureYear = new Date().getFullYear();
+// El objeto ahora guarda { 'mes': día }, ej: { '8': 24 } para septiembre
+let shiftClosures = {};
 
 
 
@@ -388,19 +388,19 @@ function renderQuadrantsList() {
     }
     
     // --- Lógica para mostrar el cuadrante activo ---
-    if (activeQuadrant) {
-        const startDate = new Date(activeQuadrant.startDate + 'T00:00:00');
-        const formattedDate = startDate.toLocaleDateString('es-ES', {
-            day: 'numeric', month: 'long', year: 'numeric'
-        });
-        activeQuadrantDisplay.innerHTML = `
-            <div class="quadrant-item active">
-                <div class="quadrant-info">
-                   
-                    <div class="quadrant-date"> Inicia el ${formattedDate} </div>
-                </div>
-            </div>`;
-    } else {
+	if (activeQuadrant) {
+		const startDate = new Date(activeQuadrant.startDate + 'T00:00:00');
+		const formattedDate = startDate.toLocaleDateString('es-ES', {
+			day: 'numeric', month: 'long', year: 'numeric'
+		});
+		activeQuadrantDisplay.innerHTML = `
+			<div class="quadrant-info-card"> 
+				<div class="quadrant-date">Inicia el ${formattedDate}</div>
+			</div>
+			<div class="quadrant-actions active-quadrant-buttons"> <button class="action-button edit" data-quadrant-id="${activeQuadrant.id}">Editar</button>
+				<button class="action-button delete" data-quadrant-id="${activeQuadrant.id}">Eliminar</button>
+			</div>`;
+	} else {
         activeQuadrantDisplay.innerHTML = '<p class="empty-list-message">Ningún cuadrante activo para la fecha de hoy.</p>';
     }
 
@@ -678,6 +678,7 @@ shiftForm.addEventListener('submit', (event) => {
 
     saveShifts(); // Guardamos en localStorage
     renderShiftsList(); // Repintamos la lista
+	renderCalendar(); 
     
     // Limpiamos y reseteamos el formulario para la próxima vez
     shiftForm.reset();
@@ -932,6 +933,7 @@ allQuadrantsList.addEventListener('click', (event) => {
         // Guardamos los cambios y repintamos la lista
         saveQuadrants();
         renderQuadrantsList();
+		renderCalendar(); 
     } else if (event.target.classList.contains('edit')) {
         // --- LÓGICA DE EDICIÓN ---
         const quadrantIdToEdit = Number(event.target.dataset.quadrantId);
@@ -965,7 +967,44 @@ allQuadrantsList.addEventListener('click', (event) => {
     }
 });
 
+// Añadimos un "oyente" también para los botones del cuadrante activo
+activeQuadrantDisplay.addEventListener('click', (event) => {
+    const target = event.target;
 
+    // Lógica de ELIMINAR para el cuadrante activo
+    if (target.classList.contains('delete')) {
+        const wantsToDelete = confirm('¿Estás seguro de que quieres eliminar el cuadrante ACTIVO?');
+        if (wantsToDelete) {
+            const quadrantIdToDelete = Number(target.dataset.quadrantId);
+            quadrants = quadrants.filter(quad => quad.id !== quadrantIdToDelete);
+            saveQuadrants();
+            renderQuadrantsList();
+            renderCalendar(); // Actualizamos el calendario
+        }
+    }
+
+    // Lógica de EDITAR para el cuadrante activo
+    if (target.classList.contains('edit')) {
+        const quadrantIdToEdit = Number(target.dataset.quadrantId);
+        const quadrantToEdit = quadrants.find(q => q.id === quadrantIdToEdit);
+        if (quadrantToEdit) {
+            // (Esta lógica es la misma que ya teníamos)
+            document.getElementById('quadrant-id-input').value = quadrantToEdit.id;
+            document.getElementById('quadrant-start-date').value = quadrantToEdit.startDate;
+            quadrantWeeksInput.value = quadrantToEdit.weeks;
+            populateQuadrantForm(quadrantToEdit.weeks);
+            quadrantToEdit.patterns.forEach((weekPattern, weekIndex) => {
+                for (const day in weekPattern) {
+                    const selector = document.querySelector(`select[data-week="${weekIndex}"][data-day="${day}"]`);
+                    if (selector) { selector.value = weekPattern[day]; }
+                }
+            });
+            document.getElementById('quadrant-form-title').textContent = 'Editar Cuadrante';
+            quadrantListView.classList.add('hidden');
+            quadrantFormView.classList.remove('hidden');
+        }
+    }
+});
 
 
 
@@ -993,14 +1032,14 @@ function isColorDark(hexColor) {
 // ===============================================================
 
 // --- Elementos de la sección ---
-const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child'); // Último item del menú
+const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
 const overtimeListView = document.getElementById('overtime-list-view');
 const backToSettingsFromOvertimeButton = document.getElementById('back-to-settings-from-overtime-button');
 const addNewOvertimeButton = document.getElementById('add-new-overtime-button');
 const overtimeListContainer = document.getElementById('overtime-list-container');
 
-
-
+// --- Funciones de guardado y carga ---
+// (Asegúrate de que 'let overtimeRates = [];' está al principio del archivo en la sección 2)
 function saveOvertimeRates() {
     localStorage.setItem('calendarAppData_overtime', JSON.stringify(overtimeRates));
 }
@@ -1014,9 +1053,9 @@ function loadOvertimeRates() {
 
 // --- Función para "Pintar" la lista de tarifas guardadas ---
 function renderOvertimeList() {
-    overtimeListContainer.innerHTML = ''; // Limpiamos la lista
+    overtimeListContainer.innerHTML = '';
 
-    if (overtimeRates.length === 0) {
+    if (overtimeRates.length === 0 && !document.querySelector('.rate-item-edit')) {
         overtimeListContainer.innerHTML = '<p class="empty-list-message">No has añadido ninguna tarifa.</p>';
     } else {
         overtimeRates.forEach(rate => {
@@ -1041,7 +1080,7 @@ function renderOvertimeList() {
 menuItemOvertime.addEventListener('click', () => {
     settingsView.classList.add('hidden');
     overtimeListView.classList.remove('hidden');
-    renderOvertimeList(); // Pintamos la lista al entrar
+    renderOvertimeList();
 });
 
 backToSettingsFromOvertimeButton.addEventListener('click', () => {
@@ -1049,14 +1088,10 @@ backToSettingsFromOvertimeButton.addEventListener('click', () => {
     settingsView.classList.remove('hidden');
 });
 
-// --- Lógica principal ---
-
-// Al pulsar "+ Añadir", creamos una fila editable
+// --- Lógica para Añadir una nueva fila editable ---
 addNewOvertimeButton.addEventListener('click', () => {
-    // Si ya existe una fila de edición, no creamos otra
     if (document.querySelector('.rate-item-edit')) return;
 
-    // Eliminamos el mensaje de "lista vacía" si existe
     const emptyMessage = overtimeListContainer.querySelector('.empty-list-message');
     if (emptyMessage) emptyMessage.remove();
 
@@ -1072,31 +1107,119 @@ addNewOvertimeButton.addEventListener('click', () => {
             <button class="action-button cancel-new-rate">Cancelar</button>
         </div>
     `;
-    // Insertamos la nueva fila al principio de la lista
     overtimeListContainer.prepend(editItem);
 });
 
+// --- Lógica para Guardar, Editar, Eliminar y Cancelar ---
+overtimeListContainer.addEventListener('click', (event) => {
+    const target = event.target;
+    const rateItem = target.closest('.rate-item');
 
+    // Guardar una NUEVA tarifa
+    if (target.classList.contains('save-new-rate')) {
+        const nameInput = rateItem.querySelector('input[type="text"]');
+        const priceInput = rateItem.querySelector('input[type="number"]');
 
+        if (nameInput.value.trim() && priceInput.value) {
+            const newRate = { id: Date.now(), name: nameInput.value.trim(), price: parseFloat(priceInput.value).toFixed(2) };
+            overtimeRates.push(newRate);
+            saveOvertimeRates();
+            renderOvertimeList();
+        } else {
+            alert('Por favor, rellena el nombre y el precio.');
+        }
+    }
 
-// --- Llamada inicial ---
-// (Añade esta línea en la sección de LLAMADA INICIAL al final de tu archivo)
-// loadOvertimeRates();
+    // Cancelar la creación de una nueva tarifa
+    if (target.classList.contains('cancel-new-rate')) {
+        renderOvertimeList();
+    }
 
+    // ELIMINAR una tarifa existente
+    if (target.classList.contains('delete-rate')) {
+        const rateIdToDelete = Number(target.dataset.id);
+        if (confirm('¿Estás seguro de que quieres eliminar esta tarifa?')) {
+            overtimeRates = overtimeRates.filter(rate => rate.id !== rateIdToDelete);
+            saveOvertimeRates();
+            renderOvertimeList();
+        }
+    }
 
+    // Entrar en MODO EDICIÓN
+    if (target.classList.contains('edit-rate')) {
+        const rateIdToEdit = Number(target.dataset.id);
+        const rateToEdit = overtimeRates.find(rate => rate.id === rateIdToEdit);
+        if (rateToEdit) {
+            const editHTML = `
+                <div class="rate-content-edit">
+                    <input type="text" class="inline-input" value="${rateToEdit.name}">
+                    <input type="number" class="inline-input price" value="${rateToEdit.price}" min="0" step="0.01">
+                </div>
+                <div class="rate-actions">
+                    <button class="action-button save-edited-rate" data-id="${rateToEdit.id}">Guardar</button>
+                    <button class="action-button cancel-edit-rate">Cancelar</button>
+                </div>
+            `;
+            rateItem.innerHTML = editHTML;
+            rateItem.classList.add('rate-item-edit');
+        }
+    }
 
+    // GUARDAR los cambios de una edición
+    if (target.classList.contains('save-edited-rate')) {
+        const rateIdToSave = Number(target.dataset.id);
+        const nameInput = rateItem.querySelector('input[type="text"]');
+        const priceInput = rateItem.querySelector('input[type="number"]');
+        
+        if (nameInput.value.trim() && priceInput.value) {
+            overtimeRates = overtimeRates.map(rate => {
+                if (rate.id === rateIdToSave) {
+                    return { ...rate, name: nameInput.value.trim(), price: parseFloat(priceInput.value).toFixed(2) };
+                }
+                return rate;
+            });
+            saveOvertimeRates();
+            renderOvertimeList();
+        } else {
+            alert('El nombre y el precio no pueden estar vacíos.');
+        }
+    }
 
-
-// --- 15. LÓGICA DE LA CASILLA DE PAGO POR HORAS ---
-shiftIsPaidCheckbox.addEventListener('change', () => {
-    if (shiftIsPaidCheckbox.checked) {
-        hourlyRateContainer.classList.remove('hidden');
-    } else {
-        hourlyRateContainer.classList.add('hidden');
+    // CANCELAR la edición
+    if (target.classList.contains('cancel-edit-rate')) {
+        renderOvertimeList();
     }
 });
 
 
+
+
+
+
+// --- 15. LÓGICA DE LA CASILLA DE PAGO POR HORAS (VERSIÓN MEJORADA) ---
+shiftIsPaidCheckbox.addEventListener('change', () => {
+    // Si el usuario marca la casilla...
+    if (shiftIsPaidCheckbox.checked) {
+        // ...primero comprobamos si existen tarifas de horas extras.
+        if (overtimeRates.length === 0) {
+            // Si no hay ninguna, mostramos un aviso y lo llevamos a la sección correspondiente.
+            alert('Primero necesitas crear al menos una tarifa de hora extra. Te llevaremos a esa sección.');
+            
+            shiftFormView.classList.add('hidden'); // Ocultamos el formulario de turnos
+            overtimeListView.classList.remove('hidden'); // Mostramos la lista de horas extras
+            renderOvertimeList(); // Dibujamos la lista de horas extras
+            
+            // Dejamos la casilla desmarcada para evitar un estado inconsistente.
+            shiftIsPaidCheckbox.checked = false;
+        } else {
+            // Si sí hay tarifas, simplemente mostramos el selector.
+            hourlyRateContainer.classList.remove('hidden');
+        }
+    } else {
+        // Si el usuario desmarca la casilla, ocultamos el selector.
+        hourlyRateContainer.classList.add('hidden');
+    }
+});
 
 
 
@@ -1214,6 +1337,7 @@ vacationForm.addEventListener('submit', (event) => {
 
     saveVacations();
     renderVacationsList();
+	renderCalendar(); 
     vacationFormView.classList.add('hidden');
     vacationsListView.classList.remove('hidden');
 });
@@ -1228,6 +1352,7 @@ vacationsListContainer.addEventListener('click', (event) => {
             vacations = vacations.filter(vac => vac.id !== vacationId);
             saveVacations();
             renderVacationsList();
+			renderCalendar(); 
         }
     }
 
@@ -1250,8 +1375,10 @@ vacationsListContainer.addEventListener('click', (event) => {
 
 
 
+
+
 // ===============================================================
-// --- SECCIÓN 17: LÓGICA DE CIERRE DE TURNO ---
+// --- SECCIÓN 17: LÓGICA DE CIERRE DE TURNO (VERSIÓN SIMPLE) ---
 // ===============================================================
 
 // --- Elementos de la sección ---
@@ -1259,9 +1386,6 @@ const menuItemClosure = document.querySelector('.settings-menu .settings-item:nt
 const shiftClosureView = document.getElementById('shift-closure-view');
 const backToSettingsFromClosureButton = document.getElementById('back-to-settings-from-closure-button');
 const monthlyClosureList = document.getElementById('monthly-closure-list');
-const yearDisplayClosure = document.getElementById('current-year-closure-display');
-const prevYearClosureBtn = document.getElementById('prev-year-closure-button');
-const nextYearClosureBtn = document.getElementById('next-year-closure-button');
 
 
 
@@ -1276,35 +1400,31 @@ function loadShiftClosures() {
     }
 }
 
-// --- FUNCIÓN PARA "Pintar" LA VISTA DE CONFIGURACIÓN (VERSIÓN CORREGIDA) ---
+// --- Función para "Pintar" la vista de configuración ---
 function renderShiftClosureView() {
-    yearDisplayClosure.textContent = displayedClosureYear;
     monthlyClosureList.innerHTML = '';
     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    let defaultsWereSet = false; // Una bandera para saber si hemos añadido nuevos defaults
+    let defaultsWereSet = false;
 
     for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
         const item = document.createElement('div');
         item.classList.add('month-closure-item');
         
-        const key = `${displayedClosureYear}-${monthIndex}`;
-        let dayToDisplay = shiftClosures[key];
+        let dayToDisplay = shiftClosures[monthIndex];
 
-        // Si no hay un día guardado para este mes, usamos el 24 por defecto
         if (!dayToDisplay) {
-            dayToDisplay = 24; // Valor por defecto
-            shiftClosures[key] = 24; // Y lo guardamos en la memoria inmediatamente
-            defaultsWereSet = true; // Marcamos que hemos hecho un cambio
+            dayToDisplay = 24;
+            shiftClosures[monthIndex] = 24;
+            defaultsWereSet = true;
         }
 
         item.innerHTML = `
             <label>${monthNames[monthIndex]}</label>
-            <input type="number" min="1" max="31" value="${dayToDisplay}" data-year="${displayedClosureYear}" data-month="${monthIndex}">
+            <input type="number" min="1" max="31" value="${dayToDisplay}" data-month="${monthIndex}">
         `;
         monthlyClosureList.appendChild(item);
     }
 
-    // Si hemos añadido algún valor por defecto nuevo, guardamos todo en localStorage
     if (defaultsWereSet) {
         saveShiftClosures();
     }
@@ -1312,7 +1432,6 @@ function renderShiftClosureView() {
 
 // --- Navegación ---
 menuItemClosure.addEventListener('click', () => {
-    displayedClosureYear = new Date().getFullYear(); // Resetea al año actual al entrar
     settingsView.classList.add('hidden');
     shiftClosureView.classList.remove('hidden');
     renderShiftClosureView();
@@ -1323,51 +1442,28 @@ backToSettingsFromClosureButton.addEventListener('click', () => {
     settingsView.classList.remove('hidden');
 });
 
-prevYearClosureBtn.addEventListener('click', () => {
-    displayedClosureYear--;
-    renderShiftClosureView();
-});
-
-nextYearClosureBtn.addEventListener('click', () => {
-    displayedClosureYear++;
-    renderShiftClosureView();
-});
-// Evento para cuando se hace clic en el año para volver al actual
-yearDisplayClosure.addEventListener('click', () => {
-    displayedClosureYear = new Date().getFullYear();
-    renderShiftClosureView();
-});
-
 // --- Lógica para guardar automáticamente al cambiar un día ---
 monthlyClosureList.addEventListener('input', (event) => {
     const input = event.target;
     if (input.tagName === 'INPUT') {
-        const year = input.dataset.year;
         const month = input.dataset.month;
         const day = input.value;
-        const key = `${year}-${month}`;
 
         if (day) {
-            shiftClosures[key] = Number(day);
+            shiftClosures[month] = Number(day);
         } else {
-            delete shiftClosures[key]; // Si se borra el número, se elimina el registro
+            delete shiftClosures[month];
         }
         saveShiftClosures();
-        renderCalendar(); // Actualizamos el calendario al momento
+        renderCalendar();
     }
 });
 
 // --- Función de ayuda para el calendario ---
-
 function isShiftClosureDay(date) {
-    const year = date.getFullYear();
     const month = date.getMonth();
     const day = date.getDate();
-    const key = `${year}-${month}`;
-    
-   
-    
-    return shiftClosures[key] === day;
+    return shiftClosures[month] === day;
 }
 
 
@@ -1431,10 +1527,41 @@ function isShiftClosureDay(date) {
 
 
 
+// ===============================================================
+// --- SECCIÓN FINAL: LÓGICA PARA GESTOS TÁCTILES (SWIPE) ---
+// ===============================================================
 
+let touchStartX = 0;
+let touchEndX = 0;
 
+// Escuchamos cuando el usuario empieza a tocar la rejilla del calendario
+calendarGrid.addEventListener('touchstart', (event) => {
+    // Guardamos la coordenada X inicial del primer dedo que toca
+    touchStartX = event.changedTouches[0].screenX;
+}, { passive: true });
 
+// Escuchamos cuando el usuario levanta el dedo de la pantalla
+calendarGrid.addEventListener('touchend', (event) => {
+    // Guardamos la coordenada X final
+    touchEndX = event.changedTouches[0].screenX;
+    handleSwipe(); // Llamamos a la función que decide qué hacer
+});
 
+function handleSwipe() {
+    const swipeThreshold = 50; // Mínimo de píxeles para considerarlo un gesto
+
+    // Si el dedo se movió más de 50px hacia la izquierda...
+    if (touchStartX - touchEndX > swipeThreshold) {
+        // ...simulamos un clic en el botón de mes siguiente.
+        nextMonthButton.click();
+    }
+
+    // Si el dedo se movió más de 50px hacia la derecha...
+    if (touchEndX - touchStartX > swipeThreshold) {
+        // ...simulamos un clic en el botón de mes anterior.
+        prevMonthButton.click();
+    }
+}
 
 
 
