@@ -34,6 +34,9 @@ const shiftIsPaidCheckbox = document.getElementById('shift-is-paid');
 const hourlyRateContainer = document.getElementById('hourly-rate-container');
 const activeQuadrantDisplay = document.getElementById('active-quadrant-display');
 const allViews = document.querySelectorAll('#app-container > div[id], #app-container > main[id]');
+const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
+const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
+const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
 
 
 
@@ -594,7 +597,25 @@ addNewShiftButton.addEventListener('click', () => showView('shift-form-view'));
 cancelShiftFormButton.addEventListener('click', () => showView('shifts-list-view'));
 
 
+// --- NAVEGACIÓN PARA LAS SECCIONES RESTANTES ---
 
+// Evento para "🌴 Vacaciones"
+menuItemVacations.addEventListener('click', () => {
+    renderVacationsList(); // Dibuja la lista actualizada
+    showView('vacations-list-view'); // Muestra la pantalla
+});
+
+// Evento para "✅ Cierre de Turno"
+menuItemClosure.addEventListener('click', () => {
+    renderShiftClosureView(); // Dibuja la lista actualizada
+    showView('shift-closure-view'); // Muestra la pantalla
+});
+
+// Evento para "💶 Horas Extras"
+menuItemOvertime.addEventListener('click', () => {
+    renderOvertimeList(); // Dibuja la lista actualizada
+    showView('overtime-list-view'); // Muestra la pantalla
+});
 
 
 
@@ -991,7 +1012,7 @@ function isColorDark(hexColor) {
 // ===============================================================
 
 // --- Elementos de la sección ---
-const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
+//const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
 const overtimeListView = document.getElementById('overtime-list-view');
 const backToSettingsFromOvertimeButton = document.getElementById('back-to-settings-from-overtime-button');
 const addNewOvertimeButton = document.getElementById('add-new-overtime-button');
@@ -1189,7 +1210,7 @@ shiftIsPaidCheckbox.addEventListener('change', () => {
 // ===============================================================
 
 // --- Elementos de la sección ---
-const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
+//const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
 const vacationsListView = document.getElementById('vacations-list-view');
 const backToSettingsFromVacationsButton = document.getElementById('back-to-settings-from-vacations-button');
 const addNewVacationButton = document.getElementById('add-new-vacation-button');
@@ -1318,7 +1339,7 @@ vacationsListContainer.addEventListener('click', (event) => {
 // ===============================================================
 
 // --- Elementos de la sección ---
-const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
+//const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
 const shiftClosureView = document.getElementById('shift-closure-view');
 const backToSettingsFromClosureButton = document.getElementById('back-to-settings-from-closure-button');
 const monthlyClosureList = document.getElementById('monthly-closure-list');
