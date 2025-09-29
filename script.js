@@ -1466,21 +1466,29 @@ function calculateEarnings(turn) {
     return `${earnings.toFixed(2)}€`;
 }
 
-// --- Lógica para abrir la modal ---
+// --- Lógica para abrir la modal (VERSIÓN FINAL) ---
 calendarGrid.addEventListener('click', (event) => {
     const dayCell = event.target.closest('.day-cell');
     if (dayCell && dayCell.dataset.date) {
         const dateStr = dayCell.dataset.date;
         const date = new Date(dateStr + 'T00:00:00');
-        
-        // Formateamos la fecha para el título
-        modalDate.textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        // Buscamos la información del día
+        // Elementos de la Modal
+        const modalHeader = dayModal.querySelector('.modal-header');
+        const modalClosureSummary = document.getElementById('modal-closure-summary');
+        const modalWorkedDays = document.getElementById('modal-worked-days');
+        const modalTotalEarnings = document.getElementById('modal-total-earnings');
+
+        // Reseteamos la modal a su estado normal
+        modalClosureSummary.classList.add('hidden');
+        modalHeader.classList.remove('closure-day');
+
+        // Rellenamos la información básica
+        modalDate.textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const turn = getTurnForDate(date);
         const onVacation = isDateOnVacation(date);
-        const isClosure = isShiftClosureDay(date);
 
+        // Rellenamos la sección de turno normal o vacaciones
         if (onVacation) {
             modalShiftName.textContent = 'Vacaciones';
             modalShiftTime.textContent = 'Día completo';
@@ -1500,10 +1508,32 @@ calendarGrid.addEventListener('click', (event) => {
             modalEarnings.textContent = 'N/A';
             modalShiftComments.textContent = 'Día no trabajado.';
         }
-        
+
+        // SI ES DÍA DE CIERRE, calculamos y mostramos el resumen
+        if (isShiftClosureDay(date)) {
+            modalHeader.classList.add('closure-day'); // Ponemos la cabecera "colorida"
+            const prevClosureDate = getPreviousClosureDate(date);
+
+            if (prevClosureDate) {
+                // El periodo empieza el día DESPUÉS del cierre anterior
+                const periodStartDate = new Date(prevClosureDate);
+                periodStartDate.setDate(periodStartDate.getDate() + 1);
+
+                const summary = calculatePeriodSummary(periodStartDate, date);
+                modalWorkedDays.textContent = summary.workedDays;
+                modalTotalEarnings.textContent = `${summary.totalEarnings.toFixed(2)}€`;
+                modalClosureSummary.classList.remove('hidden');
+            } else {
+                modalWorkedDays.textContent = 'N/A';
+                modalTotalEarnings.textContent = 'N/A';
+                modalClosureSummary.classList.remove('hidden');
+            }
+        }
+
         dayModal.classList.remove('hidden');
     }
 });
+
 
 // --- Lógica para cerrar la modal ---
 function closeModal() {
@@ -1518,3 +1548,65 @@ dayModal.addEventListener('click', (event) => {
         closeModal();
     }
 });
+
+
+
+// --- NUEVAS FUNCIONES DE CÁLCULO PARA EL CIERRE ---
+
+// Función para encontrar la fecha del cierre anterior
+function getPreviousClosureDate(currentClosureDate) {
+    let prevDate = new Date(currentClosureDate);
+    // Retrocedemos día a día durante un máximo de 2 meses para encontrar el cierre anterior
+    for (let i = 0; i < 60; i++) {
+        prevDate.setDate(prevDate.getDate() - 1);
+        if (isShiftClosureDay(prevDate)) {
+            return prevDate; // Lo hemos encontrado
+        }
+    }
+    return null; // No se encontró un cierre anterior
+}
+
+
+// Función que calcula el resumen de un periodo (VERSIÓN CORREGIDA)
+function calculatePeriodSummary(startDate, endDate) {
+    let workedDays = 0;
+    let totalEarnings = 0;
+    let currentDate = new Date(startDate);
+
+    // Recorremos cada día del periodo
+    while (currentDate <= endDate) {
+        // Comprobamos si el día actual es de vacaciones
+        const onVacation = isDateOnVacation(currentDate);
+        const turn = getTurnForDate(currentDate);
+        
+        // La nueva condición: solo contamos si tiene turno, no es "Descanso" Y NO es vacaciones.
+        if (turn && turn.name !== 'Descanso' && !onVacation) {
+            workedDays++;
+            const earnings = parseFloat(calculateEarnings(turn));
+            if (!isNaN(earnings)) {
+                totalEarnings += earnings;
+            }
+        }
+        
+        // Pasamos al día siguiente
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return { workedDays, totalEarnings };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
