@@ -136,22 +136,18 @@ function renderCalendar() {
     }
 }
 
-// --- NUEVA FUNCIÓN AUXILIAR PARA CREAR Y PINTAR CUALQUIER CELDA DE DÍA ---
-// Esta función es una "fábrica" de celdas. La usamos para no repetir el mismo código tres veces.
-// Recibe la fecha que tiene que dibujar y un valor que le dice si es de otro mes.
+// --- NUEVA FUNCIÓN AUXILIAR PARA CREAR Y PINTAR CUALQUIER CELDA DE DÍA (VERSIÓN FINAL)---
 function createDayCell(date, isOtherMonth) {
-    // Creamos el contenedor principal de la celda.
+    // Creamos los elementos básicos de la celda
     const dayCell = document.createElement('div');
     dayCell.classList.add('day-cell');
-    // Si es un día de otro mes, le añadimos la clase 'empty' para el estilo gris.
     if (isOtherMonth) {
         dayCell.classList.add('empty');
     }
 
-    // Creamos las 3 sub-secciones de la celda.
     const dayNumber = document.createElement('div');
     dayNumber.classList.add('day-number');
-    dayNumber.textContent = date.getDate(); // Obtenemos el número del día (ej: 29).
+    dayNumber.textContent = date.getDate();
 
     const dayEmoticon = document.createElement('div');
     dayEmoticon.classList.add('day-emoticon');
@@ -159,53 +155,54 @@ function createDayCell(date, isOtherMonth) {
     const dayShift = document.createElement('div');
     dayShift.classList.add('day-shift');
 
-    // --- LÓGICA DE PRIORIDAD (VERSIÓN CORREGIDA) ---
-    // 1. PRIMERO, comprobamos si el día es de vacaciones.
+    date.setHours(0, 0, 0, 0); // Normalizamos la fecha
+
+    // --- LÓGICA DE PRIORIDAD MEJORADA ---
+
+    // 1. Primero, establecemos el contenido principal (Vacaciones o Turno).
     if (isDateOnVacation(date)) {
         dayEmoticon.textContent = '🌴';
-        dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc'; 
-    
-    // 2. SI NO, comprobamos si es día de cierre de turno.
-    } else if (isShiftClosureDay(date)) {
-        dayEmoticon.textContent = '✅';
-        dayCell.classList.add('shift-closure-day'); // Añade el borde verde.
-        // Buscamos el turno normal para mostrarlo también.
-        const turn = getTurnForDate(date);
-        if (turn) {
-            dayShift.textContent = turn.name;
-            dayCell.style.backgroundColor = turn.color; // Mantenemos el color del turno.
-             if (isColorDark(turn.color) && !isOtherMonth) {
-                dayShift.style.color = 'white';
-                dayNumber.style.color = 'white';
-            }
-        }
-
-    // 3. SI NO, buscamos el turno que toca (como antes).
+        dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
     } else {
         const turn = getTurnForDate(date);
         if (turn) {
             dayShift.textContent = turn.name;
             dayCell.style.backgroundColor = turn.color;
+            if (turn.isPaid) {
+                dayEmoticon.textContent = '💶';
+            }
             if (isColorDark(turn.color) && !isOtherMonth) {
                 dayShift.style.color = 'white';
                 dayNumber.style.color = 'white';
             }
         }
     }
+
+    // 2. AHORA, de forma independiente, comprobamos si es día de cierre.
+    // Esto nos permite añadir el borde sin importar lo que haya pasado antes.
+    if (isShiftClosureDay(date)) {
+        dayCell.classList.add('shift-closure-day'); // Añadimos SIEMPRE el borde verde.
+        
+        // Si no estamos de vacaciones, el icono de cierre (✅) tiene prioridad.
+        if (!isDateOnVacation(date)) {
+            dayEmoticon.textContent = '✅';
+        }
+    }
     
-    // Lógica independiente para marcar siempre los Domingos en rojo.
+    // Lógica para marcar los Domingos en rojo (se mantiene igual).
     if (date.getDay() === 0) {
         dayNumber.classList.add('sunday-text');
     }
     
-    // "Montamos" la celda: añadimos las 3 secciones al contenedor principal.
+    // "Montamos" la celda.
     dayCell.appendChild(dayNumber);
     dayCell.appendChild(dayEmoticon);
     dayCell.appendChild(dayShift);
     
-    // Y finalmente, añadimos la celda completa a la rejilla del calendario.
     calendarGrid.appendChild(dayCell);
 }
+
+
 
 
 // --- FUNCIÓN "MÁQUINA DEL TIEMPO" PARA CALCULAR EL TURNO DE UN DÍA ---
