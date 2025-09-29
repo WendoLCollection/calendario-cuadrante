@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Turnos</title>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="app-container">
+        
+        <header id="app-header">
+            <h1 class="header-title">📅 Calendario de Turnos</h1>
+            <button id="settings-button" class="header-button">Ajustes </button>
+        </header>
+
+        <main id="calendar-view">
+            <div id="month-selector">
+                <button id="prev-month-button">&lt;</button>
+                <h2 id="current-month-display">cargando...</h2>
+                <button id="next-month-button">&gt;</button>
+            </div>
+			
+			<div id="weekdays">
+				<div class="weekday">Lun</div>
+				<div class="weekday">Mar</div>
+				<div class="weekday">Mié</div>
+				<div class="weekday">Jue</div>
+				<div class="weekday">Vie</div>
+				<div class="weekday">Sáb</div>
+				<div class="weekday sunday-text">Dom</div>
+			</div>
+
+	
+			
+			<div id="calendar-grid">
+							</div>
+		 </main> 
+					
+					<div id="settings-view" class="hidden">
+						
+						<header id="settings-header">
+							<button id="back-to-calendar-button" class="header-button">←</button>
+							<h1 class="header-title">Ajustes</h1>
+						</header>
+					
+						<main id="settings-content">
+							<ul class="settings-menu">
+								<li class="settings-item">🎨 Turnos</li>
+								<li class="settings-item">🔄 Cuadrante</li>
+								<li class="settings-item">🌴 Vacaciones</li>
+								<li class="settings-item">✅ Cierre de Turno</li>
+								<li class="settings-item">💶 Horas Extras</li>
+							</ul>
+						</main>
+					
+					</div> 
+					
+<!-- *************** Turnos *************************-->			
+<div id="shifts-list-view" class="hidden">
+    
+		<header class="view-header">
+			<button id="back-to-settings-button" class="header-button">←</button>
+			<h1 class="header-title">Mis Turnos</h1>
+		</header>
+		<div class="add-button-container">
+			<button id="add-new-shift-button" class="button-primary">+ Añadir nuevo turno</button>
+		</div>
+
+    <main id="shifts-list-container">
+	
+        
+        <div class="shift-item">
+
+        </div>
+        </main>
+</div>
+
+<div id="shift-form-view" class="hidden">
+
+    <header class="view-header">
+        <button id="cancel-shift-form-button" class="header-button">←</button>
+        <h1 id="shift-form-title" class="header-title">Añadir Turno</h1>
+    </header>
+
+    <main>
+        <form id="shift-form">
+		  <input type="hidden" id="shift-id-input">
+            <div class="form-group">
+                <label for="shift-name">Nombre del turno</label>
+                <input type="text" id="shift-name" required>
+            </div>
+
+            <div class="form-group-inline">
+                <div class="form-group">
+                    <label for="shift-start-time">Hora de inicio</label>
+                    <input type="time" id="shift-start-time">
+                </div>
+                <div class="form-group">
+                    <label for="shift-end-time">Hora de fin</label>
+                    <input type="time" id="shift-end-time">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Color</label>
+                <div id="color-selector">
+                    </div>
+            </div>
+
+            <div class="form-group">
+                <label for="shift-comments">Comentarios (opcional)</label>
+                <textarea id="shift-comments" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group-checkbox">
+                <input type="checkbox" id="shift-is-paid">
+                <label for="shift-is-paid">Este turno se paga por horas</label>
+            </div>
+
+            <div id="hourly-rate-container" class="hidden">
+                <div class="form-group">
+                    <label for="shift-hourly-rate">Tarifa de hora extra</label>
+                    <select id="shift-hourly-rate">
+                        <option>Tarifa A (Ejemplo)</option>
+                        <option>Tarifa B (Ejemplo)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Guardar</button>
+            </div>
+        </form>
+    </main>
+
+</div>
+<!-- *************** Turnos *************************-->
+
+
+
+
+<!-- *************** Cuadrantes *************************-->
+
+<div id="quadrant-list-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-quadrant-button" class="header-button">←</button>
+        <h1 class="header-title">Mis Cuadrantes</h1>
+    </header>
+
+    <div class="add-button-container">
+        <button id="add-new-quadrant-button" class="button-primary">+ Añadir nuevo cuadrante</button>
+    </div>
+
+    <main id="quadrant-list-container">
+        <div class="active-quadrant-section">
+            <h2>Cuadrante Activo</h2>
+            <div id="active-quadrant-display">
+                <p class="empty-list-message">Aún no has activado ningún cuadrante.</p>
+            </div>
+        </div>
+
+        <div class="quadrant-list-section">
+            <h2>Todos los Cuadrantes</h2>
+            <div id="all-quadrants-list">
+                </div>
+        </div>
+    </main>
+</div>
+
+<div id="quadrant-form-view" class="hidden">
+
+    <header class="view-header">
+        <button id="cancel-quadrant-form-button" class="header-button">←</button>
+        <h1 id="quadrant-form-title" class="header-title">Añadir Cuadrante</h1>
+    </header>
+
+    <main>
+        <form id="quadrant-form">
+		  <input type="hidden" id="quadrant-id-input">
+			<div class="form-group-inline"> <div class="form-group">
+					<label for="quadrant-start-date">Fecha de inicio </label>
+					<input type="date" id="quadrant-start-date" required>
+				</div>
+
+				<div class="form-group">
+					<label for="quadrant-weeks">Duración (en semanas)</label>
+					<input type="number" id="quadrant-weeks" value="3" min="1" required>
+				</div>
+			</div> 
+            
+            <div class="form-group">
+                <label>Patrón de turnos de la semana</label>
+                <div id="week-pattern-selector">
+                    </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Guardar Cuadrante</button>
+            </div>
+        </form>
+    </main>
+</div>
+<!-- *************** Cuadrantes *************************-->
+
+<!-- *************** Vacaciones *************************-->
+<div id="vacations-list-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-vacations-button" class="header-button">←</button>
+        <h1 class="header-title">Periodos de Vacaciones</h1>
+    </header>
+
+    <div class="add-button-container">
+        <button id="add-new-vacation-button" class="button-primary">+ Añadir vacaciones</button>
+    </div>
+
+    <main id="vacations-list-container">
+        </main>
+</div>
+
+<div id="vacation-form-view" class="hidden">
+
+    <header class="view-header">
+        <button id="cancel-vacation-form-button" class="header-button">←</button>
+        <h1 id="vacation-form-title" class="header-title">Añadir Vacaciones</h1>
+    </header>
+
+    <main>
+        <form id="vacation-form">
+            <input type="hidden" id="vacation-id-input">
+
+            <div class="form-group">
+                <label for="vacation-name">Nombre descriptivo</label>
+                <input type="text" id="vacation-name" placeholder="Ej: Verano 2025" required>
+            </div>
+
+            <div class="form-group-inline">
+                <div class="form-group">
+                    <label for="vacation-start-date">Fecha de inicio</label>
+                    <input type="date" id="vacation-start-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="vacation-end-date">Fecha de fin</label>
+                    <input type="date" id="vacation-end-date" required>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Guardar Periodo</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<!-- *************** Vacaciones *************************-->
+
+<!-- *************** Cierre *************************-->
+<div id="shift-closure-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-closure-button" class="header-button">←</button>
+        <h1 class="header-title">Días de Cierre de Turno</h1>
+    </header>
+
+<main id="shift-closure-container">
+    <div id="closure-year-selector">
+        <button id="prev-year-closure-button">&lt;</button>
+        <h2 id="current-year-closure-display">2025</h2>
+        <button id="next-year-closure-button">&gt;</button>
+    </div>
+    <p class="explanation-text">
+        Para cada mes, selecciona el día en que se realiza el cierre.
+    </p>
+    <div id="monthly-closure-list">
+        </div>
+</main>
+</div>
+
+<!-- *************** Cierre *************************-->
+
+<!-- *************** Horas extra  *************************-->
+
+<div id="overtime-list-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-overtime-button" class="header-button">←</button>
+        <h1 class="header-title">Tarifas Horas Extras</h1>
+    </header>
+
+    <div class="add-button-container">
+        <button id="add-new-overtime-button" class="button-primary">+ Añadir nueva tarifa</button>
+    </div>
+
+    <main id="overtime-list-container">
+        </main>
+
+</div>
+
+<!-- *************** Horas extra   *************************-->
+
+
+</div> <script src="script.js"></script>
+</body>
+</html>

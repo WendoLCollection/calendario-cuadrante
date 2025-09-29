@@ -1,0 +1,675 @@
+/* El '*' selecciona TODO y le quita márgenes que ponen los navegadores por defecto */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Estilos para el cuerpo de la página */
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #f0f2f5; /* Un gris claro de fondo */
+}
+
+/* Contenedor principal de la aplicación */
+#app-container {
+	width: 99%; /* Ocupará el 95% del ancho de la pantalla */
+    max-width: 900px; /* Le ponemos un tope para pantallas muy grandes */
+    margin: 03px auto; /* Esto lo mantiene centrado */
+    background-color: #ffffff; /* Fondo blanco */
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Una sombra suave */
+    border-radius: 8px; /* Bordes redondeados */
+    overflow: hidden; /* Asegura que nada se salga de los bordes redondeados */
+}
+
+/* --- ESTILOS DE LA CABECERA --- */
+#app-header {
+    display: flex; /* Pone el título y el botón en una línea */
+    justify-content: space-between; /* Empuja el título a la izquierda y el botón a la derecha */
+    align-items: center; /* Centra los elementos verticalmente */
+    padding: 20px 20px; /* Espaciado interno (arriba/abajo y a los lados) */
+    background-color: #4a90e2; /* Un color azul */
+    color: white; /* Color del texto */
+}
+.header-title { font-size: 1.2em; }
+.header-button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer; /* El cursor se convierte en una manita */
+    color: white;
+}
+
+/* --- ESTILOS DEL SELECTOR DE MES --- */
+#month-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+}
+#month-selector button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #4a90e2; /* Botones azules */
+}
+#current-month-display {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+
+
+
+/* --- ESTILOS DE LA REJILLA DEL CALENDARIO --- */
+
+/* --- ESTILOS DE LOS DÍAS DE LA SEMANA --- */
+#weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 columnas iguales */
+    background-color: #f7f7f7; /* Un fondo gris claro */
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.weekday {
+    text-align: center; /* Centramos el texto */
+    padding: 10px 0; /* Espaciado vertical */
+    font-weight: bold; /* En negrita */
+    font-size: 0.9em;
+    color: #555; /* Un color de texto gris oscuro */
+}
+
+#calendar-grid {
+    display: grid;
+    /* Crea 7 columnas de igual tamaño */
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 1px; /* Pequeña separación entre celdas */
+    background-color: #e0e0e0; /* Color de la separación */
+    border-top: 1px solid #e0e0e0; /* Línea superior */
+}
+
+/* Estilo para cada CELDA de día */
+.day-cell {
+    background-color: white;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column; /* Pone los elementos internos en columna (uno encima de otro) */
+}
+/* Estilo para las celdas vacías al inicio del mes */
+.day-cell.empty {
+    background-color: #f9f9f9;
+}
+
+/* Estilos para las 3 SECCIONES dentro de cada celda */
+.day-number, .day-emoticon, .day-shift {
+    flex: 1.5; /* Hace que cada sección ocupe el mismo espacio vertical */
+    display: flex;
+    justify-content: center; /* Centrado horizontal */
+    align-items: center; /* Centrado vertical */
+    width: 100%;
+}
+
+/* La línea fina que separa las secciones */
+.day-number, .day-emoticon {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Estilos específicos para cada sección */
+.day-number { font-weight: bold; font-size: 1.1em; }
+.day-emoticon { font-size: 1.2em; }
+.day-shift { font-size: 0.8em; color: #555; }
+
+/* Clase especial para el texto de los domingos */
+.sunday-text {
+    color: #e51a4c; /* Un tono de rojo moderno */
+}
+
+
+
+
+
+
+
+
+
+
+/* --- ESTILOS DE LA PANTALLA DE AJUSTES --- */
+
+/* Clase 'hidden' para ocultar elementos. ¡Esta es la clave de la navegación! */
+.hidden {
+    display: none !important; 
+}
+
+/* Cabecera de la pantalla de ajustes */
+#settings-header {
+    display: flex;
+    align-items: center; /* Alineamos los elementos verticalmente */
+    padding: 10px 20px;
+    background-color: #f7f7f7; /* Un gris muy claro */
+    border-bottom: 1px solid #e0e0e0;
+    color: #333; /* Texto oscuro */
+}
+/* Le damos al título de ajustes más peso para que ocupe el espacio central */
+#settings-header .header-title {
+    flex-grow: 1;
+    text-align: center; /* Centramos el título */
+    margin-right: 2.5em; /* truco para compensar el espacio del botón de volver */
+}
+/* El botón de volver en la cabecera de ajustes */
+#settings-header .header-button {
+    color: #4a90e2; /* Lo ponemos azul como los otros botones */
+    font-size: 2em; /* Hacemos la flecha un poco más grande */
+}
+
+
+/* --- Estilos para el menú de opciones --- */
+.settings-menu {
+    list-style: none; /* Quitamos los puntos de la lista */
+    margin: 0;
+    padding: 0;
+}
+
+.settings-item {
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0; /* Línea fina de separación */
+    cursor: pointer; /* La manita para indicar que se puede hacer clic */
+    font-size: 1.1em;
+}
+
+/* Efecto visual al pasar el ratón por encima */
+.settings-item:hover {
+    background-color: #f9f9f9;
+}
+
+
+
+
+
+/* =============================================================== */
+/* --- ESTILOS GENERALES PARA VISTAS Y BOTONES --- */
+/* =============================================================== */
+
+/* Damos un estilo común a las cabeceras de las nuevas vistas */
+.view-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #e0e0e0;
+    color: #333;
+}
+.view-header .header-title {
+    flex-grow: 1;
+    text-align: center;
+    margin-right: 2.5em; /* Compensa el espacio del botón de volver */
+}
+.view-header .header-button {
+    color: #4a90e2;
+    font-size: 2em;
+}
+
+/* =============================================================== */
+/* --- ESTILOS PARA LA LISTA DE TURNOS (PANTALLA 3) --- */
+/* =============================================================== */
+
+/* Estilo para cada fila de la lista de turnos */
+.shift-item {
+    display: flex; /* Pone los elementos en fila */
+    align-items: center; /* Centra verticalmente */
+    padding-left: 0; /* Quitamos padding para que la barra de color llegue al borde */
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* La barra de color a la izquierda */
+.shift-color-bar {
+    width: 8px; /* Ancho de la barra */
+    height: 70px; /* Altura de la barra (y de la fila) */
+    margin-right: 15px; /* Separación con el texto */
+}
+
+/* Contenedor del nombre y las horas */
+.shift-content {
+    flex-grow: 1; /* Ocupa todo el espacio disponible */
+}
+
+.shift-name {
+    font-weight: bold;
+    display: flex; /* Lo convertimos en un contenedor flexible */
+   /*justify-content: space-between; /* Reparte el espacio: nombre a la izq, billete a la der */
+    align-items: center; /* Los alinea verticalmente */
+}
+.shift-hours {
+    font-size: 0.9em;
+    color: #777;
+}
+
+/* Icono del billete */
+.shift-indicator {
+     padding: 0 15px; 
+     font-size: 1.0em;
+}
+
+/* Contenedor de los botones de acción */
+.shift-actions {
+    display: flex; /* Botones en fila */
+    gap: 10px; /* Espacio entre botones */
+    padding-right: 15px;
+}
+.action-button {
+    background-color: #f0f2f5;
+    border: 1px solid #ddd;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.action-button.delete {
+    color: #e63946; /* Color rojo para el botón de eliminar */
+}
+
+/* --- Botón flotante de Añadir (+) --- */
+.fab-container {
+    position: sticky; /* Se queda fijo al hacer scroll */
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: flex-end; /* Lo alinea a la derecha */
+    margin-top: 10px; /* Separación con la lista */
+}
+.fab {
+    background-color: #4a90e2; /* Azul */
+    color: white;
+    border: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%; /* Círculo perfecto */
+    font-size: 2em;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+/* =============================================================== */
+/* --- ESTILOS PARA EL FORMULARIO (PANTALLA 4) --- */
+/* =============================================================== */
+
+#shift-form {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espacio entre cada grupo del formulario */
+}
+.form-group label, .form-group-checkbox label {
+    display: block; /* La etiqueta se pone encima del campo */
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+/* Para poner Hora Inicio y Hora Fin en la misma línea */
+.form-group-inline {
+    display: flex;
+    gap: 20px;
+}
+.form-group-inline .form-group {
+    width: 100%; /* Cada uno ocupa el 50% */
+}
+
+/* Para el selector de color */
+#color-selector {
+    display: flex;
+    flex-wrap: wrap; /* Si no caben, pasan a la línea de abajo */
+    gap: 10px;
+}
+
+/* Para la casilla de "se paga por horas" */
+.form-group-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.form-group-checkbox input {
+    width: auto; /* La casilla no ocupa el 100% */
+}
+
+/* Botón de Guardar */
+.form-actions {
+    margin-top: 10px;
+}
+.button-primary {
+    width: 100%;
+    padding: 15px;
+    background-color: #4a90e2; /* Azul */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+
+/* Contenedor del botón "+ Añadir nuevo turno" */
+.add-button-container {
+    padding: 20px;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Estilo para el mensaje de lista vacía */
+.empty-list-message {
+    text-align: center; /* Centra el texto horizontalmente */
+    padding: 40px 20px; /* Añade espacio arriba/abajo y a los lados */
+    color: #777; /* Un color de texto gris para que no sea tan fuerte */
+}
+
+
+/* --- Estilos para el selector de color del formulario --- */
+.color-dot {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%; /* Círculo perfecto */
+    cursor: pointer;
+    border: 3px solid transparent; /* Borde transparente por defecto */
+    transition: transform 0.2s; /* Efecto suave al hacer clic */
+}
+
+.color-dot:hover {
+    transform: scale(1.1); /* Se agranda un poco al pasar el ratón */
+}
+
+/* Estilo para el color que está SELECCIONADO */
+.color-dot.selected {
+    border-color: #4a90e2; /* Borde azul para indicar selección */
+    transform: scale(1.1);
+}
+
+
+/* =============================================================== */
+/* --- ESTILOS PARA LA LISTA DE CUADRANTES (PANTALLA 5) --- */
+/* =============================================================== */
+
+#quadrant-list-container {
+    padding: 0 20px 20px 20px; /* Añadimos espaciado solo a los lados y abajo */
+}
+
+/* Sección del cuadrante activo */
+.active-quadrant-section {
+    background-color: #eaf4ff; /* Un azul muy claro para destacarlo */
+    border: 1px solid #cce1ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.active-quadrant-section h2, .quadrant-list-section h2 {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    color: #333;
+	text-align: center;
+}
+
+.quadrant-list-section {
+    margin-top: 30px;
+}
+
+
+/* =============================================================== */
+/* --- ESTILOS PARA EL FORMULARIO DE CUADRANTE (PANTALLA 6) --- */
+/* =============================================================== */
+
+/* Contenedor para la lista de Lunes a Domingo */
+#week-pattern-selector {
+    display: flex;
+    flex-direction: column; /* Apila los días verticalmente */
+    gap: 15px; /* Espacio entre cada día */
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+/* Estilo para cada fila (ej: "Lunes" + selector) */
+.week-day-pattern {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Espacio entre el nombre del día y el selector */
+}
+
+.week-day-pattern label {
+    font-weight: bold;
+    width: 90px; /* Ancho fijo para el nombre del día, para que todo esté alineado */
+}
+
+.week-day-pattern select {
+    flex-grow: 1; /* El selector ocupa todo el espacio restante */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+}
+
+/* Centrar los textos de los campos que están en línea */
+.form-group-inline .form-group label {
+    text-align: center;
+    width: 100%; /* Asegura que la etiqueta ocupe todo el ancho para poder centrar el texto */
+	
+}
+
+
+
+/* Estilo para cada item en la lista de cuadrantes */
+.quadrant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+	
+    background-color: white;
+    padding: 15px 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.quadrant-title {
+    font-weight: bold;
+	text-align: center;
+}
+
+.quadrant-date {
+    font-size: 1.1em;
+    color: #757;
+	text-align: center;
+}
+
+.quadrant-actions {
+    display: flex;
+    gap: 10px;
+	
+}
+
+/* Hacemos que la caja de información del cuadrante activo ocupe todo el ancho */
+.quadrant-item.active .quadrant-info {
+    flex-grow: 1;
+}
+
+
+
+/* =============================================================== */
+/* --- ESTILOS PARA HORAS EXTRAS (EDICIÓN EN LÍNEA) --- */
+/* =============================================================== */
+
+.rate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.rate-content {
+    display: flex;
+    flex-direction: column;
+}
+.rate-name {
+    font-weight: bold;
+}
+.rate-price {
+    color: #2a9d8f;
+    font-size: 0.9em;
+}
+.rate-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Estilos para la fila en modo edición */
+.rate-item-edit {
+    background-color: #eaf4ff;
+    border-radius: 8px;
+}
+.rate-content-edit {
+    display: flex;
+    flex-grow: 1;
+    gap: 10px;
+}
+.inline-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.inline-input.price {
+    width: 80px; /* Hacemos el campo de precio más pequeño */
+}
+
+/* Pone en gris los números de los días del mes siguiente/anterior */
+/* Estilo para las celdas de otros meses */
+.day-cell.empty {
+    background-color: #f9f9f9;
+    opacity: 0.5; /* <-- HACE QUE LA CELDA SE VEA SEMITRANSPARENTE */
+    transition: opacity 0.2s; /* Efecto suave */
+}
+
+/* Al pasar el ratón, la celda recupera su opacidad normal */
+.day-cell.empty:hover {
+    opacity: 1;
+}
+
+
+
+/* =============================================================== */
+/* --- ESTILOS PARA LA SECCIÓN DE CIERRE DE TURNO --- */
+/* =============================================================== */
+
+#shift-closure-container {
+    padding: 20px;
+}
+
+.explanation-text {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #555;
+    font-size: 0.9em;
+}
+
+#monthly-closure-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.month-closure-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f9f9f9;
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.month-closure-item label {
+    font-weight: bold;
+}
+
+.month-closure-item input[type="number"] {
+    width: 70px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* --- Estilo para el CALENDARIO --- */
+/* Esta es la clase que añadirá el borde verde a la celda */
+.day-cell.shift-closure-day {
+    border: 3px solid #2a9d8f; /* Un borde verde oscuro */
+    padding: 0; /* Ajuste para que el borde no encoja la celda */
+}
+
+
+
+
+/* Estilo para el selector de año de la sección "Cierre de Turno" */
+#closure-year-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Espacio de separación con el texto de abajo */
+}
+
+#closure-year-selector button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #4a90e2; /* Mismo azul que los otros botones */
+}
+
+#closure-year-selector h2 {
+    cursor: pointer; /* El cursor se convierte en una manita */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
