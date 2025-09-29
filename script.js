@@ -33,6 +33,10 @@ const allQuadrantsList = document.getElementById('all-quadrants-list');
 const shiftIsPaidCheckbox = document.getElementById('shift-is-paid');
 const hourlyRateContainer = document.getElementById('hourly-rate-container');
 const activeQuadrantDisplay = document.getElementById('active-quadrant-display');
+const allViews = document.querySelectorAll('#app-container > div[id], #app-container > main[id]');
+
+
+
 
 
 
@@ -514,30 +518,6 @@ monthDisplay.addEventListener('click', () => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // --- 5. LLAMADA INICIAL ---
 loadShifts();
 loadQuadrants();
@@ -558,32 +538,33 @@ renderCalendar();
 
 
 
-
-
-
-
-
-
-
 // --- 6. NAVEGACIÓN ENTRE PANTALLAS ---
+// --- FUNCIÓN CENTRAL PARA CAMBIAR DE VISTA ---
+function showView(viewId, pushState = true) {
+    allViews.forEach(view => view.classList.add('hidden'));
+
+    const viewToShow = document.getElementById(viewId);
+    if (viewToShow) {
+        viewToShow.classList.remove('hidden');
+    }
+
+    if (viewId === 'calendar-view') {
+        appHeader.classList.remove('hidden');
+    } else {
+        appHeader.classList.add('hidden');
+    }
+
+    if (pushState) {
+        // Añadimos una entrada al historial del navegador
+        history.pushState({ view: viewId }, '', `#${viewId}`);
+    }
+}
 
 // Evento para cuando se hace clic en el botón de ajustes (rueda ⚙️)
-settingsButton.addEventListener('click', () => {
-	appHeader.classList.add('hidden'); 
-    // Ocultamos la vista del calendario
-    calendarView.classList.add('hidden');
-    // Mostramos la vista de ajustes
-    settingsView.classList.remove('hidden');
-});
+settingsButton.addEventListener('click', () => showView('settings-view'));
 
 // Evento para cuando se hace clic en el botón de volver (flecha ←)
-backToCalendarButton.addEventListener('click', () => {
-	appHeader.classList.remove('hidden');
-    // Ocultamos la vista de ajustes
-    settingsView.classList.add('hidden');
-    // Mostramos la vista del calendario
-    calendarView.classList.remove('hidden');
-});
+backToCalendarButton.addEventListener('click', () => showView('calendar-view'));
 
 
 
@@ -601,29 +582,16 @@ backToCalendarButton.addEventListener('click', () => {
 // --- 7. NAVEGACIÓN DE LA SECCIÓN DE TURNOS ---
 
 // Evento para cuando se hace clic en "🎨 Turnos" en el menú de ajustes
-menuItemShifts.addEventListener('click', () => {
-    settingsView.classList.add('hidden');      // Oculta el menú de ajustes
-    shiftsListView.classList.remove('hidden'); // Muestra la lista de turnos
-});
+menuItemShifts.addEventListener('click', () => showView('shifts-list-view'));
 
 // Evento para el botón de volver (←) desde la lista de turnos hacia el menú
-backToSettingsButton.addEventListener('click', () => {
-    shiftsListView.classList.add('hidden');   // Oculta la lista de turnos
-    settingsView.classList.remove('hidden');  // Muestra el menú de ajustes
-});
+backToSettingsButton.addEventListener('click', () => showView('settings-view'));
 
 // Evento para el botón flotante (+) para ir al formulario de añadir turno
-addNewShiftButton.addEventListener('click', () => {
-	populateOvertimeSelector(); 
-    shiftsListView.classList.add('hidden');   // Oculta la lista de turnos
-    shiftFormView.classList.remove('hidden'); // Muestra el formulario
-});
+addNewShiftButton.addEventListener('click', () => showView('shift-form-view'));
 
 // Evento para el botón de volver (←) desde el formulario hacia la lista de turnos
-cancelShiftFormButton.addEventListener('click', () => {
-    shiftFormView.classList.add('hidden');    // Oculta el formulario
-    shiftsListView.classList.remove('hidden');// Muestra la lista de turnos
-});
+cancelShiftFormButton.addEventListener('click', () => showView('shifts-list-view'));
 
 
 
@@ -799,30 +767,21 @@ shiftsListContainer.addEventListener('click', (event) => {
 // --- 11. NAVEGACIÓN DE LA SECCIÓN DE CUADRANTE ---
 
 // Evento para cuando se hace clic en "🔄 Cuadrante" en el menú de ajustes
-menuItemQuadrant.addEventListener('click', () => {
-    settingsView.classList.add('hidden');
-    quadrantListView.classList.remove('hidden');
-});
+menuItemQuadrant.addEventListener('click', () => showView('quadrant-list-view'));
 
 // Evento para el botón de volver (←) desde la lista de cuadrantes
-backToSettingsFromQuadrantButton.addEventListener('click', () => {
-    quadrantListView.classList.add('hidden');
-    settingsView.classList.remove('hidden');
-});
+backToSettingsFromQuadrantButton.addEventListener('click', () => showView('settings-view'));
 
 // Evento para el botón "+ Añadir nuevo cuadrante"
+//addNewQuadrantButton.addEventListener('click', () => showView('quadrant-form-view'));
 addNewQuadrantButton.addEventListener('click', () => {
-    // Leemos el valor por defecto (3) del campo y dibujamos ese número de semanas
-    populateQuadrantForm(quadrantWeeksInput.value); // <-- LÍNEA MODIFICADA
-    quadrantListView.classList.add('hidden');
-    quadrantFormView.classList.remove('hidden');
+    populateQuadrantForm(quadrantWeeksInput.value); // <-- FALTABA ESTA LÍNEA
+    showView('quadrant-form-view');
 });
 
+
 // Evento para el botón de volver (←) desde el formulario de cuadrante
-cancelQuadrantFormButton.addEventListener('click', () => {
-    quadrantFormView.classList.add('hidden');
-    quadrantListView.classList.remove('hidden');
-});
+cancelQuadrantFormButton.addEventListener('click', () => showView('quadrant-list-view'));
 
 // Evento que se dispara cada vez que cambia el valor del campo de semanas
 quadrantWeeksInput.addEventListener('input', () => {
@@ -1077,16 +1036,9 @@ function renderOvertimeList() {
 }
 
 // --- Navegación ---
-menuItemOvertime.addEventListener('click', () => {
-    settingsView.classList.add('hidden');
-    overtimeListView.classList.remove('hidden');
-    renderOvertimeList();
-});
+menuItemOvertime.addEventListener('click', () => showView('overtime-list-view'));
 
-backToSettingsFromOvertimeButton.addEventListener('click', () => {
-    overtimeListView.classList.add('hidden');
-    settingsView.classList.remove('hidden');
-});
+backToSettingsFromOvertimeButton.addEventListener('click', () => showView('settings-view'));
 
 // --- Lógica para Añadir una nueva fila editable ---
 addNewOvertimeButton.addEventListener('click', () => {
@@ -1292,29 +1244,13 @@ function renderVacationsList() {
 }
 
 // --- Navegación ---
-menuItemVacations.addEventListener('click', () => {
-    settingsView.classList.add('hidden');
-    vacationsListView.classList.remove('hidden');
-    renderVacationsList();
-});
+menuItemVacations.addEventListener('click', () => showView('vacations-list-view'));
 
-backToSettingsFromVacationsButton.addEventListener('click', () => {
-    vacationsListView.classList.add('hidden');
-    settingsView.classList.remove('hidden');
-});
+backToSettingsFromVacationsButton.addEventListener('click', () => showView('settings-view'));
 
-addNewVacationButton.addEventListener('click', () => {
-    vacationForm.reset();
-    document.getElementById('vacation-id-input').value = '';
-    document.getElementById('vacation-form-title').textContent = 'Añadir Vacaciones';
-    vacationsListView.classList.add('hidden');
-    vacationFormView.classList.remove('hidden');
-});
+addNewVacationButton.addEventListener('click', () => showView('vacation-form-view'));
 
-cancelVacationFormButton.addEventListener('click', () => {
-    vacationFormView.classList.add('hidden');
-    vacationsListView.classList.remove('hidden');
-});
+cancelVacationFormButton.addEventListener('click', () => showView('vacations-list-view'));
 
 
 // --- Lógica de Guardar, Editar y Eliminar ---
@@ -1431,16 +1367,9 @@ function renderShiftClosureView() {
 }
 
 // --- Navegación ---
-menuItemClosure.addEventListener('click', () => {
-    settingsView.classList.add('hidden');
-    shiftClosureView.classList.remove('hidden');
-    renderShiftClosureView();
-});
+menuItemClosure.addEventListener('click', () => showView('shift-closure-view'));
 
-backToSettingsFromClosureButton.addEventListener('click', () => {
-    shiftClosureView.classList.add('hidden');
-    settingsView.classList.remove('hidden');
-});
+backToSettingsFromClosureButton.addEventListener('click', () => showView('settings-view'));
 
 // --- Lógica para guardar automáticamente al cambiar un día ---
 monthlyClosureList.addEventListener('input', (event) => {
@@ -1565,7 +1494,23 @@ function handleSwipe() {
 
 
 
+// --- LÓGICA PARA EL BOTÓN "ATRÁS" DEL MÓVIL ---
+window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.view) {
+        // Muestra la vista guardada en el historial sin crear una nueva entrada
+        showView(event.state.view, false);
+    } else {
+        // Si no hay estado, vuelve al calendario (la vista inicial)
+        showView('calendar-view', false);
+    }
+});
 
+// Carga inicial: comprueba si la URL tiene un # y muestra esa vista
+if (location.hash) {
+    showView(location.hash.substring(1), false);
+} else {
+    showView('calendar-view', false);
+}
 
 
 

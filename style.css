@@ -712,7 +712,7 @@ body {
     display: flex;
     justify-content: left; /* Centra el conjunto (logo + texto) */
     align-items: center;     /* Centra verticalmente el logo con el texto */
-    gap: 20px;               /* Espacio entre el logo y el texto */
+    gap: 10px;               /* Espacio entre el logo y el texto */
 }
 
 .footer-logo {
