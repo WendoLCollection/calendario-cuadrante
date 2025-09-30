@@ -318,56 +318,95 @@
             <h2 id="modal-date"></h2>
             <button id="modal-close-button" class="header-button">×</button>
         </header>
-        <main class="modal-body">
 		
-            <div class="modal-section">
-                <h3>Información del Turno</h3>
-					<div class="info-grid">
-						<div class="info-item">
-							<span>Turno:</span>
-							<span id="modal-shift-name">--</span>
-						</div>
-						<div class="info-item">
-							<span>Ganancias:</span>
-							<span id="modal-earnings">--</span>
-						</div>
-						<div class="info-item">
-							<span>Horario:</span>
-							<span id="modal-shift-time">--</span>
-						</div>
-						<div class="info-item">
-							<span>Horas Totales:</span>
-							<span id="modal-total-hours">--</span>
-						</div>
-					</div>
+<main class="modal-body">
+    <div id="modal-view-section">
+        <div class="modal-section">
+            <h3>Información del Turno</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span>Turno:</span>
+                    <span id="modal-shift-name">--</span>
+                </div>
+                <div class="info-item">
+                    <span>Horario:</span>
+                    <span id="modal-shift-time">--</span>
+                </div>
+                <div class="info-item">
+                    <span>Horas Totales:</span>
+                    <span id="modal-total-hours">--</span>
+                </div>
+                <div class="info-item">
+                    <span>Ganancias:</span>
+                    <span id="modal-earnings">--</span>
+                </div>
             </div>
-			
-			<div id="modal-closure-summary" class="modal-section hidden">
-				<h3>Resumen del Periodo de Cierre</h3>
-				<div class="info-grid">
-					<span>Días trabajados:</span>
-					<span id="modal-worked-days">--</span>
-					<span>Ganancias totales:</span>
-					<span id="modal-total-earnings">--</span>
-				</div>
-			</div>
-			
-			
-            <div class="modal-section">
-                <h3>Comentarios del Turno</h3>
-                <p id="modal-shift-comments">--</p>
+        </div>
+
+        <div id="modal-closure-summary" class="modal-section hidden">
+            <h3>Resumen del Periodo de Cierre</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span>Días trabajados:</span>
+                    <span id="modal-worked-days">--</span>
+                </div>
+                <div class="info-item">
+                    <span>Ganancias totales:</span>
+                    <span id="modal-total-earnings">--</span>
+                </div>
             </div>
-			
-			
-			
-			
-			
-			
-        </main>
+        </div>
+        <div class="modal-section">
+            <h3>Comentarios</h3>
+            <p id="modal-shift-comments-display" class="comment-block shift-comment"></p>
+            <p id="modal-daily-comments-display" class="comment-block daily-comment"></p>
+        </div>
+    </div>
+
+<div id="modal-edit-section" class="hidden">
+
+    <div class="form-group">
+        <label for="modal-edit-comment">Añadir/Editar Comentario del Día</label>
+        <textarea id="modal-edit-comment" rows="3"></textarea>
+    </div>
+
+
+    <div class="form-group">
+        <label for="override-shift-name">Nombre del Turno (solo para este día)</label>
+        <input type="text" id="override-shift-name">
+    </div>
+    <div class="form-group-inline">
+        <div class="form-group">
+            <label for="override-start-time">Hora de inicio</label>
+            <input type="time" id="override-start-time">
+        </div>
+        <div class="form-group">
+            <label for="override-end-time">Hora de fin</label>
+            <input type="time" id="override-end-time">
+        </div>
+    </div>
+	
+    <div class="form-group-checkbox">
+        <input type="checkbox" id="override-is-paid">
+        <label for="override-is-paid">Este turno se paga por horas</label>
+    </div>
+		<div id="override-hourly-rate-container" class="form-group hidden">
+		<label for="override-hourly-rate">Seleccionar Tarifa</label>
+		<select id="override-hourly-rate">
+			</select>
+	</div>
+	
+
+	
+</div>
+	
+</main>
         <footer class="modal-footer">
-            <!-- <button id="modal-edit-button" class="action-button">Editar</button>-->
+			<button id="modal-edit-button" class="action-button">Editar</button>
             <button id="modal-close-button-footer" class="button-primary">Cerrar</button>
+			
         </footer>
+		
     </div>
 </div>
 <!-- *************** ventana modal*************************-->

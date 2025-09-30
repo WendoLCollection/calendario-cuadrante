@@ -844,18 +844,42 @@ body {
 
 
 
+.comment-block {
+    font-size: 0.9em;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+.shift-comment {
+    background-color: #f0f2f5; /* Fondo gris claro para el comentario del turno */
+}
+.daily-comment {
+    background-color: #fffbe6; /* Fondo amarillo claro para el comentario del día */
+}
 
 
 
+/* Centrar las etiquetas del formulario de edición de la modal */
+#modal-edit-section .form-group label {
+    text-align: center;
+}
+
+/* Centrar el contenido del grupo de la casilla de verificación */
+#modal-edit-section .form-group-checkbox {
+    display: flex;
+    justify-content: center; /* Centra la casilla y el texto juntos */
+}
+
+.action-button.reset {
+    color: #e63946; /* Un color rojo para que destaque */
+    margin-right: auto; /* Lo empuja hacia la izquierda, separándolo del resto */
+}
 
 
-
-
-
-
-
-
-
+/* Hacer que todos los botones del pie de la modal tengan el mismo ancho */
+.modal-footer button {
+    flex: 1; /* Esta propiedad hace que se repartan el espacio a partes iguales */
+}
 
 
 

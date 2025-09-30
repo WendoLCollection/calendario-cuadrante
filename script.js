@@ -36,6 +36,17 @@ const allQuadrantsList = document.getElementById('all-quadrants-list');
 const shiftIsPaidCheckbox = document.getElementById('shift-is-paid');
 const hourlyRateContainer = document.getElementById('hourly-rate-container');
 const activeQuadrantDisplay = document.getElementById('active-quadrant-display');
+const modalClosureSummary = document.getElementById('modal-closure-summary');
+const modalWorkedDays = document.getElementById('modal-worked-days');
+const modalTotalEarnings = document.getElementById('modal-total-earnings');
+const overrideIsPaidCheckbox = document.getElementById('override-is-paid');
+const overrideHourlyRateContainer = document.getElementById('override-hourly-rate-container');
+
+
+
+
+
+
 
 
 
@@ -80,6 +91,10 @@ let vacations = [];
 // --- Base de datos y estado ---
 // El objeto ahora guarda { 'mes': día }, ej: { '8': 24 } para septiembre
 let shiftClosures = {};
+
+
+// --- crear la memoria de las excepciones: ---
+let dayNotes = {}; // Guardará { 'YYYY-MM-DD': { nota, nuevoTurnoId } }
 
 
 
@@ -186,11 +201,21 @@ function createDayCell(date, isOtherMonth) {
         dayCell.classList.add('shift-closure-day'); // Añadimos SIEMPRE el borde verde.
         
         // Si no estamos de vacaciones, el icono de cierre (✅) tiene prioridad.
-        if (!isDateOnVacation(date)) {
-            dayEmoticon.textContent = '✅';
-        }
+        //if (!isDateOnVacation(date)) {
+            //dayEmoticon.textContent = '✅';
+        //}
     }
     
+	// --- LÓGICA FINAL PARA EL ICONO DE DÍA EDITADO (MÁXIMA PRIORIDAD) ---
+// Después de haber decidido todos los otros iconos (vacaciones, cierre, etc.),
+// hacemos una última comprobación. Si el día fue editado manualmente...
+if (isDayOverridden(date)) {
+    // ...el icono de la chincheta (📌) tiene la última palabra y reemplaza a cualquier otro.
+    dayEmoticon.textContent = '📌';
+}
+
+
+	
     // Lógica para marcar los Domingos en rojo (se mantiene igual).
     if (date.getDay() === 0) {
         dayNumber.classList.add('sunday-text');
@@ -208,44 +233,57 @@ function createDayCell(date, isOtherMonth) {
 
 
 // --- FUNCIÓN "MÁQUINA DEL TIEMPO" PARA CALCULAR EL TURNO DE UN DÍA ---
+
+
+
+/**
+ * La "máquina del tiempo": calcula el turno que corresponde a una fecha específica.
+ * @param {Date} date - La fecha para la que se quiere obtener el turno.
+ * @returns {object|null} - El objeto del turno correspondiente, o null.
+ */
 function getTurnForDate(date) {
-    // 1. Buscamos todos los cuadrantes que podrían aplicar a esta fecha
-    // (aquellos que empezaron en o antes de la fecha que nos interesa)
-    //const candidateQuadrants = quadrants.filter(q => new Date(q.startDate) <= date);
-	const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
-	
-    // Si no hay ningún cuadrante candidato, no hay turno que mostrar
-    if (candidateQuadrants.length === 0) {
-        return null;
+    // Creamos una clave única para la fecha en formato YYYY-MM-DD.
+    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const note = dayNotes[dateKey];
+
+    // --- 1. MÁXIMA PRIORIDAD: Turnos personalizados para un día concreto ---
+    // Comprobamos si existe un turno personalizado guardado en las notas de ese día.
+    if (note && note.overrideShift) {
+        // Si existe, lo devolvemos inmediatamente, ignorando todo lo demás.
+        return note.overrideShift;
     }
 
-    // 2. De los candidatos, nos quedamos con el más reciente (el que gobierna)
-    // Para ello, los ordenamos por fecha de inicio de más nueva a más antigua
+    // --- 2. PRIORIDAD MEDIA: Lógica de Cuadrantes (si no hay turno personalizado) ---
+    const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
+    if (candidateQuadrants.length === 0) {
+        return null; // No hay cuadrantes que apliquen, no hay turno.
+    }
+
+    // De los posibles cuadrantes, buscamos el más reciente.
     candidateQuadrants.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
     const governingQuadrant = candidateQuadrants[0];
 
-    // 3. Calculamos cuántos días han pasado desde que empezó el cuadrante gobernante
-	const startDate = new Date(governingQuadrant.startDate + 'T00:00:00');
-    // getTime() devuelve milisegundos. Dividimos para convertirlos a días.
-    const diffTime = Math.abs(date - startDate);
+    // Calculamos los días transcurridos para saber en qué semana del ciclo estamos.
+    const startDate = new Date(governingQuadrant.startDate + 'T00:00:00');
+    const diffTime = date - startDate;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    // 4. Calculamos en qué semana del ciclo y en qué día de la semana estamos
+    
     const weekOfCycle = Math.floor(diffDays / 7) % governingQuadrant.weeks;
-    const dayOfWeek = date.getDay(); // 0=Domingo, 1=Lunes...
+    const dayOfWeek = date.getDay();
     const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     const dayName = dayNames[dayOfWeek];
 
-    // 5. Buscamos el ID del turno en el patrón del cuadrante
+    // Buscamos el ID del turno en el patrón del cuadrante.
     const turnId = governingQuadrant.patterns[weekOfCycle][dayName];
 
-    // 6. Buscamos la información completa del turno (nombre, color...)
+    // --- 3. Devolvemos el turno encontrado ---
     if (turnId === 'REST') {
-        // Si es "Descanso", creamos un objeto especial
-        return { name: 'Descanso', color: '#f0f2f5' }; // Un color gris claro
+        return { name: 'Descanso', color: '#f0f2f5' };
     } else {
-        // Si no, buscamos el turno en nuestra lista de turnos
-        return shifts.find(s => s.id === Number(turnId));
+        // Buscamos la información completa del turno en nuestra lista de turnos.
+        const foundShift = shifts.find(s => s.id === Number(turnId));
+        // Si no lo encuentra (porque fue borrado), devolvemos un turno de "error".
+        return foundShift ? foundShift : { name: 'TURNO BORRADO', color: '#ff8fa3' };
     }
 }
 
@@ -368,6 +406,30 @@ function loadQuadrants() {
     }
 }
 
+// --- FUNCIONES PARA GUARDAR Y CARGAR LAS NOTAS/EXCEPCIONES DIARIAS ---
+
+/**
+ * Guarda el objeto 'dayNotes' en el localStorage del navegador.
+ * Primero lo convierte a un formato de texto (JSON) para poder guardarlo.
+ */
+function saveDayNotes() {
+    localStorage.setItem('calendarAppData_dayNotes', JSON.stringify(dayNotes));
+}
+
+/**
+ * Carga las notas guardadas desde el localStorage cuando se inicia la aplicación.
+ * Si encuentra datos, los convierte de texto de vuelta a un objeto JavaScript.
+ */
+function loadDayNotes() {
+    const savedData = localStorage.getItem('calendarAppData_dayNotes');
+    if (savedData) {
+        dayNotes = JSON.parse(savedData);
+    }
+}
+
+
+
+
 function renderQuadrantsList() {
     const allQuadrantsList = document.getElementById('all-quadrants-list');
     const activeQuadrantDisplay = document.getElementById('active-quadrant-display');
@@ -452,9 +514,15 @@ function renderColorSelector() {
 
 
 // --- FUNCIÓN PARA RELLENAR EL SELECTOR DE HORAS EXTRAS ---
-function populateOvertimeSelector() {
-    const overtimeSelector = document.getElementById('shift-hourly-rate');
-    overtimeSelector.innerHTML = ''; // Limpiamos opciones de ejemplo
+/**
+ * Rellena un menú desplegable (select) con las tarifas de horas extras.
+ * @param {string} selectorId - El ID del elemento <select> que se quiere rellenar.
+ */
+function populateOvertimeSelector(selectorId) {
+    const overtimeSelector = document.getElementById(selectorId);
+    if (!overtimeSelector) return; // Si no encuentra el selector, no hace nada.
+
+    overtimeSelector.innerHTML = ''; // Limpiamos opciones anteriores.
 
     if (overtimeRates.length === 0) {
         overtimeSelector.innerHTML = '<option value="">No hay tarifas creadas</option>';
@@ -463,10 +531,43 @@ function populateOvertimeSelector() {
 
     overtimeRates.forEach(rate => {
         const option = document.createElement('option');
-        option.value = rate.id; // Guardamos el ID como valor
-        option.textContent = `${rate.name} (${rate.price}€/h)`; // Mostramos el texto
+        option.value = rate.id; // Guardamos el ID como valor.
+        option.textContent = `${rate.name} (${rate.price}€/h)`; // Mostramos el texto.
         overtimeSelector.appendChild(option);
     });
+}
+
+// --- FUNCIONES DE CÁLCULO PARA LA MODAL ---
+function calculateTotalHours(startTime, endTime) {
+    if (!startTime || !endTime) return 'N/A';
+    
+    const start = new Date(`1970-01-01T${startTime}`);
+    const end = new Date(`1970-01-01T${endTime}`);
+    
+    let diff = end - start;
+    // Si la hora de fin es anterior a la de inicio, significa que el turno cruza la medianoche
+    if (diff < 0) { 
+        diff += 24 * 60 * 60 * 1000; // Añadimos 24 horas en milisegundos
+    }
+    
+    const hours = diff / (1000 * 60 * 60);
+    return `${hours.toFixed(2)}h`;
+}
+
+function calculateEarnings(turn) {
+    if (!turn || !turn.isPaid || !turn.overtimeRateId) return '0.00€';
+    
+    const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
+    if (!rate) return 'Tarifa no encontrada';
+    
+    const hoursStr = calculateTotalHours(turn.startTime, turn.endTime);
+    // Extraemos solo el número de las horas (ej: de "8.00h" coge 8.00)
+    const hours = parseFloat(hoursStr);
+    
+    if (isNaN(hours)) return 'N/A';
+
+    const earnings = hours * rate.price;
+    return `${earnings.toFixed(2)}€`;
 }
 
 
@@ -499,14 +600,19 @@ monthDisplay.addEventListener('click', () => {
 
 
 
+
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 5. LLAMADA INICIAL ---
 // ********************************************************************************************************************************************************************************************************************************************
+
 loadShifts();
 loadQuadrants();
 loadOvertimeRates();
 loadVacations();
 loadShiftClosures();
+loadDayNotes();
+
+
 renderShiftsList();
 renderQuadrantsList();
 renderColorSelector();
@@ -556,7 +662,7 @@ backToSettingsButton.addEventListener('click', () => {
 
 // Evento para el botón flotante (+) para ir al formulario de añadir turno
 addNewShiftButton.addEventListener('click', () => {
-	populateOvertimeSelector(); 
+	populateOvertimeSelector('shift-hourly-rate');
     shiftsListView.classList.add('hidden');   // Oculta la lista de turnos
     shiftFormView.classList.remove('hidden'); // Muestra el formulario
 });
@@ -687,7 +793,7 @@ shiftsListContainer.addEventListener('click', (event) => {
         const shiftToEdit = shifts.find(shift => shift.id === shiftIdToEdit);
 
 		if (shiftToEdit) {
-			populateOvertimeSelector();
+			populateOvertimeSelector('shift-hourly-rate');
 			// Rellenamos el formulario...
 			// ... (justo después de la línea 'shift-is-paid').checked = shiftToEdit.isPaid; )
 
@@ -1378,6 +1484,18 @@ function isShiftClosureDay(date) {
 }
 
 
+/** Comprueba si un día ha sido modificado manualmente (tiene un turno o comentario guardado).*/
+function isDayOverridden(date) {
+    // Creamos la clave de fecha en formato 'YYYY-MM-DD'.
+    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const note = dayNotes[dateKey];
+
+    // Un día se considera "editado" si existe una nota para él y esa nota
+    // contiene un turno personalizado (overrideShift) o un comentario del día (dailyComment).
+    return note && (note.overrideShift || (note.dailyComment && note.dailyComment.trim() !== ''));
+}
+
+
 
 
 
@@ -1420,166 +1538,329 @@ function handleSwipe() {
 
 
 
-
-
-
-
-
-
-// ********************************************************************************************************************************************************************************************************************************************
-// --- LÓGICA DE LA VENTANA MODAL ---
-// ********************************************************************************************************************************************************************************************************************************************
-
+// ===============================================================
+// --- LÓGICA DE LA VENTANA MODAL (CON MODO EDICIÓN) ---
+// ===============================================================
 
 // --- Elementos de la modal ---
 const dayModal = document.getElementById('day-modal');
-const modalDate = document.getElementById('modal-date');
-const modalShiftName = document.getElementById('modal-shift-name');
-const modalShiftTime = document.getElementById('modal-shift-time');
-const modalTotalHours = document.getElementById('modal-total-hours');
-const modalEarnings = document.getElementById('modal-earnings');
-const modalShiftComments = document.getElementById('modal-shift-comments');
-const modalCloseButton = document.getElementById('modal-close-button');
-const modalCloseButtonFooter = document.getElementById('modal-close-button-footer');
+const modalViewSection = document.getElementById('modal-view-section');
+const modalEditSection = document.getElementById('modal-edit-section');
+let currentEditingDate = null; // Variable para recordar qué día estamos viendo/editando
 
-// --- Funciones de cálculo ---
-function calculateTotalHours(startTime, endTime) {
-    if (!startTime || !endTime) return 'N/A';
-    const start = new Date(`1970-01-01T${startTime}`);
-    const end = new Date(`1970-01-01T${endTime}`);
-    let diff = end - start;
-    if (diff < 0) { // Si el turno cruza la medianoche
-        diff += 24 * 60 * 60 * 1000;
-    }
-    const hours = diff / (1000 * 60 * 60);
-    return `${hours.toFixed(2)}h`;
-}
 
-function calculateEarnings(turn) {
-    if (!turn || !turn.isPaid || !turn.overtimeRateId) return '0.00€';
-    const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
-    if (!rate) return 'Tarifa no encontrada';
+// --- Función para abrir y rellenar la modal (VERSIÓN FINAL Y COMPLETA) ---
+function openDayModal(dateStr) {
+    currentEditingDate = dateStr;
+    const date = new Date(dateStr + 'T00:00:00');
+	
+// --- Bloque de limpieza ---
+// Quitamos el estilo especial de la cabecera por si estaba puesto de antes.
+const modalHeader = dayModal.querySelector('.modal-header');
+modalHeader.classList.remove('closure-day');
+modalClosureSummary.classList.add('hidden');
+
     
-    const hoursStr = calculateTotalHours(turn.startTime, turn.endTime);
-    const hours = parseFloat(hoursStr);
-    const earnings = hours * rate.price;
-    return `${earnings.toFixed(2)}€`;
+    // Rellenamos el título
+    dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Buscamos la información del día
+    const turn = getTurnForDate(date);
+    const onVacation = isDateOnVacation(date);
+    const dayNote = dayNotes[dateStr] || {};
+
+    // Elementos de los comentarios
+    const shiftCommentsDisplay = dayModal.querySelector('#modal-shift-comments-display');
+    const dailyCommentsDisplay = dayModal.querySelector('#modal-daily-comments-display');
+
+    // Reseteamos los comentarios para empezar de cero
+    shiftCommentsDisplay.textContent = '';
+    shiftCommentsDisplay.style.display = 'none';
+    dailyCommentsDisplay.textContent = '';
+    dailyCommentsDisplay.style.display = 'none';
+
+    // Rellenamos la sección de "Modo Vista"
+    if (onVacation) {
+        dayModal.querySelector('#modal-shift-name').textContent = 'Vacaciones';
+        dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
+        dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
+        dayModal.querySelector('#modal-earnings').textContent = 'N/A';
+        dailyCommentsDisplay.textContent = 'Periodo de vacaciones.';
+        dailyCommentsDisplay.style.display = 'block';
+
+    } else if (turn) {
+        dayModal.querySelector('#modal-shift-name').textContent = turn.name;
+        dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
+        dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
+        dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
+        
+        // Lógica para mostrar los comentarios
+        if (turn.comments) {
+            shiftCommentsDisplay.textContent = `${turn.comments}`;
+            shiftCommentsDisplay.style.display = 'block';
+        }
+        if (dayNote.dailyComment) {
+            dailyCommentsDisplay.textContent = `${dayNote.dailyComment}`;
+            dailyCommentsDisplay.style.display = 'block';
+        }
+
+    } else {
+        dayModal.querySelector('#modal-shift-name').textContent = 'Libre';
+        dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
+        dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
+        dayModal.querySelector('#modal-earnings').textContent = 'N/A';
+    } if (isShiftClosureDay(date)) {
+    // Ponemos la cabecera verde
+    const modalHeader = dayModal.querySelector('.modal-header');
+    modalHeader.classList.add('closure-day');
+    
+    // --- LÓGICA DE CÁLCULO REAL ---
+    // 1. Usamos la primera herramienta para buscar el cierre anterior.
+    const prevClosureDate = getPreviousClosureDate(date);
+
+    // 2. Si lo encontramos, calculamos el resumen del periodo.
+    if (prevClosureDate) {
+        const periodStartDate = new Date(prevClosureDate);
+        periodStartDate.setDate(periodStartDate.getDate() + 1); // El periodo empieza un día después.
+
+        // Usamos la segunda herramienta para obtener los totales.
+        const summary = calculatePeriodSummary(periodStartDate, date);
+        
+        // 3. Rellenamos el resumen con los resultados.
+        document.getElementById('modal-worked-days').textContent = summary.workedDays;
+        document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
+    } else {
+        // Si no hay un cierre anterior, lo indicamos.
+        document.getElementById('modal-worked-days').textContent = 'N/A';
+        document.getElementById('modal-total-earnings').textContent = 'N/A';
+    }
+    
+    // Hacemos visible la sección de resumen.
+    const modalClosureSummary = document.getElementById('modal-closure-summary');
+    modalClosureSummary.classList.remove('hidden');
+}
+    
+    // Nos aseguramos de que empezamos en "Modo Vista"
+    switchToViewMode();
+    dayModal.classList.remove('hidden');
 }
 
-// --- Lógica para abrir la modal (VERSIÓN FINAL) ---
+// --- Función para cambiar a Modo Edición ---
+/**
+ * Cambia la ventana modal a "Modo Edición".
+ * Ahora, limpia el formulario en lugar de rellenarlo.
+ */
+/**
+ * Cambia la ventana modal a "Modo Edición".
+ * Si el día ya tiene cambios guardados, los muestra en el formulario.
+ * Si no, muestra el formulario vacío.
+ */
+function switchToEditMode() {
+    // Ocultamos la vista de información y mostramos la de edición.
+    modalViewSection.classList.add('hidden');
+    modalEditSection.classList.remove('hidden');
+
+    // Rellenamos el selector de tarifas por si se necesita.
+    populateOvertimeSelector('override-hourly-rate');
+
+    // Seleccionamos los elementos del formulario.
+    const nameInput = document.getElementById('override-shift-name');
+    const startTimeInput = document.getElementById('override-start-time');
+    const endTimeInput = document.getElementById('override-end-time');
+    const isPaidCheckbox = document.getElementById('override-is-paid');
+    const overtimeSelector = document.getElementById('override-hourly-rate');
+    const commentTextarea = document.getElementById('modal-edit-comment');
+    
+    // Buscamos si existen notas o un turno personalizado para este día.
+    const dayNote = dayNotes[currentEditingDate] || {};
+    const overrideShift = dayNote.overrideShift;
+
+    // --- LÓGICA MODIFICADA ---
+    // Si existe un turno personalizado, rellenamos el formulario con sus datos.
+    if (overrideShift) {
+        nameInput.value = overrideShift.name || '';
+        startTimeInput.value = overrideShift.startTime || '';
+        endTimeInput.value = overrideShift.endTime || '';
+        isPaidCheckbox.checked = overrideShift.isPaid || false;
+
+        if (overrideShift.isPaid) {
+            overrideHourlyRateContainer.classList.remove('hidden');
+            overtimeSelector.value = overrideShift.overtimeRateId;
+        } else {
+            overrideHourlyRateContainer.classList.add('hidden');
+        }
+    } else {
+        // Si no hay turno personalizado, mostramos el formulario vacío.
+        nameInput.value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+        isPaidCheckbox.checked = false;
+        overrideHourlyRateContainer.classList.add('hidden');
+    }
+    
+    // Rellenamos siempre el comentario del día, si existe.
+    commentTextarea.value = dayNote.dailyComment || '';
+
+    // Cambiamos los botones del pie de página a "Guardar" y "Cancelar".
+    const modalFooter = dayModal.querySelector('.modal-footer');
+    modalFooter.innerHTML = `
+        <button id="modal-cancel-button" class="action-button">Cancelar</button>
+        <button id="modal-save-button" class="button-primary">Guardar Cambios</button>
+    `;
+}
+
+// --- Función para volver a Modo Vista ---
+/**
+ * Cambia la ventana modal a "Modo Vista", mostrando los botones adecuados.
+ */
+function switchToViewMode() {
+    modalViewSection.classList.remove('hidden');
+    modalEditSection.classList.add('hidden');
+
+    const modalFooter = dayModal.querySelector('.modal-footer');
+    const date = new Date(currentEditingDate + 'T00:00:00');
+
+    let footerHTML = '';
+    // Si el día ha sido editado manualmente, mostramos el botón "Restablecer".
+    if (isDayOverridden(date)) {
+        footerHTML += `<button id="modal-reset-button" class="action-button reset">Restablecer</button>`;
+    }
+
+    // Añadimos los botones de siempre.
+    footerHTML += `
+        <button id="modal-edit-button" class="action-button">Editar</button>
+        <button id="modal-close-button-footer" class="button-primary">Cerrar</button>
+    `;
+
+    modalFooter.innerHTML = footerHTML;
+}
+
+
+// --- Lógica principal de los eventos ---
 calendarGrid.addEventListener('click', (event) => {
     const dayCell = event.target.closest('.day-cell');
     if (dayCell && dayCell.dataset.date) {
-        const dateStr = dayCell.dataset.date;
-        const date = new Date(dateStr + 'T00:00:00');
-
-        // Elementos de la Modal
-        const modalHeader = dayModal.querySelector('.modal-header');
-        const modalClosureSummary = document.getElementById('modal-closure-summary');
-        const modalWorkedDays = document.getElementById('modal-worked-days');
-        const modalTotalEarnings = document.getElementById('modal-total-earnings');
-
-        // Reseteamos la modal a su estado normal
-        modalClosureSummary.classList.add('hidden');
-        modalHeader.classList.remove('closure-day');
-
-        // Rellenamos la información básica
-        modalDate.textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const turn = getTurnForDate(date);
-        const onVacation = isDateOnVacation(date);
-
-        // Rellenamos la sección de turno normal o vacaciones
-        if (onVacation) {
-            modalShiftName.textContent = 'Vacaciones';
-            modalShiftTime.textContent = 'Día completo';
-            modalTotalHours.textContent = 'N/A';
-            modalEarnings.textContent = 'N/A';
-            modalShiftComments.textContent = 'Periodo de vacaciones.';
-        } else if (turn) {
-            modalShiftName.textContent = turn.name;
-            modalShiftTime.textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
-            modalTotalHours.textContent = calculateTotalHours(turn.startTime, turn.endTime);
-            modalEarnings.textContent = calculateEarnings(turn);
-            modalShiftComments.textContent = turn.comments || 'Sin comentarios.';
-        } else {
-            modalShiftName.textContent = 'Libre';
-            modalShiftTime.textContent = 'Día completo';
-            modalTotalHours.textContent = 'N/A';
-            modalEarnings.textContent = 'N/A';
-            modalShiftComments.textContent = 'Día no trabajado.';
-        }
-
-        // SI ES DÍA DE CIERRE, calculamos y mostramos el resumen
-        if (isShiftClosureDay(date)) {
-            modalHeader.classList.add('closure-day'); // Ponemos la cabecera "colorida"
-            const prevClosureDate = getPreviousClosureDate(date);
-
-            if (prevClosureDate) {
-                // El periodo empieza el día DESPUÉS del cierre anterior
-                const periodStartDate = new Date(prevClosureDate);
-                periodStartDate.setDate(periodStartDate.getDate() + 1);
-
-                const summary = calculatePeriodSummary(periodStartDate, date);
-                modalWorkedDays.textContent = summary.workedDays;
-                modalTotalEarnings.textContent = `${summary.totalEarnings.toFixed(2)}€`;
-                modalClosureSummary.classList.remove('hidden');
-            } else {
-                modalWorkedDays.textContent = 'N/A';
-                modalTotalEarnings.textContent = 'N/A';
-                modalClosureSummary.classList.remove('hidden');
-            }
-        }
-
-        dayModal.classList.remove('hidden');
+        openDayModal(dayCell.dataset.date);
     }
 });
 
+dayModal.addEventListener('click', (event) => {
+    const target = event.target;
+    // Cerrar la modal
+    if (target.id === 'day-modal' || target.id === 'modal-close-button' || target.id === 'modal-close-button-footer') {
+        dayModal.classList.add('hidden');
+    }
+	// Cambiar a modo edición
+	if (target.id === 'modal-edit-button') {
+		switchToEditMode();
+	}
+    // Cancelar la edición
+    if (target.id === 'modal-cancel-button') {
+        switchToViewMode();
+    }
 
-// --- Lógica para cerrar la modal ---
-function closeModal() {
+	
+	
+// Si se pulsa el botón "Guardar Cambios"
+if (target.id === 'modal-save-button') {
+    // 1. Leemos todos los datos del formulario de edición.
+    const overrideName = document.getElementById('override-shift-name').value;
+    const overrideStart = document.getElementById('override-start-time').value;
+    const overrideEnd = document.getElementById('override-end-time').value;
+    const overrideIsPaid = document.getElementById('override-is-paid').checked;
+    const overrideRateId = document.getElementById('override-hourly-rate').value; // <-- Leemos la tarifa seleccionada
+    const newComment = document.getElementById('modal-edit-comment').value;
+
+    // VALIDACIÓN: Si hay un nombre de turno, las horas son obligatorias.
+    if (overrideName.trim() !== '' && (!overrideStart || !overrideEnd)) {
+        alert('Si introduces un nombre de turno, también debes especificar la hora de inicio y fin.');
+        return;
+    }
+
+    if (!dayNotes[currentEditingDate]) {
+        dayNotes[currentEditingDate] = {};
+    }
+
+    // 2. Comprobamos si se ha introducido un nombre de turno.
+    if (overrideName.trim() !== '') {
+        // Si hay nombre, creamos y guardamos el objeto del turno personalizado.
+        dayNotes[currentEditingDate].overrideShift = {
+            name: overrideName,
+            startTime: overrideStart,
+            endTime: overrideEnd,
+            isPaid: overrideIsPaid,
+            overtimeRateId: overrideIsPaid ? overrideRateId : null, // <-- GUARDAMOS la tarifa
+            color: '#e0e0e0'
+        };
+    } else {
+        delete dayNotes[currentEditingDate].overrideShift;
+    }
+    
+    // 3. Guardamos siempre el comentario del día.
+    dayNotes[currentEditingDate].dailyComment = newComment;
+
+    // 4. Hacemos los cambios permanentes y actualizamos todo.
+    saveDayNotes();
+    renderCalendar();
     dayModal.classList.add('hidden');
 }
 
-modalCloseButton.addEventListener('click', closeModal);
-modalCloseButtonFooter.addEventListener('click', closeModal);
-dayModal.addEventListener('click', (event) => {
-    // Si se hace clic en el fondo oscuro, se cierra
-    if (event.target.id === 'day-modal') {
-        closeModal();
+
+// Si se pulsa el botón "Restablecer"
+if (target.id === 'modal-reset-button') {
+    if (confirm('¿Quieres eliminar los cambios manuales de este día y volver al turno del cuadrante?')) {
+        // Borramos la nota/excepción completa para este día.
+        delete dayNotes[currentEditingDate];
+
+        saveDayNotes();      // Guardamos el cambio.
+        renderCalendar();    // Actualizamos el calendario.
+        dayModal.classList.add('hidden'); // Cerramos la ventana.
     }
+}
+
 });
+
+
+
+
+
+
 
 
 
 // --- NUEVAS FUNCIONES DE CÁLCULO PARA EL CIERRE ---
 
-// Función para encontrar la fecha del cierre anterior
+/**
+ * Busca la fecha del día de cierre anterior a la fecha dada.
+ * @param {Date} currentClosureDate - La fecha del cierre actual.
+ * @returns {Date|null} - La fecha del cierre anterior, o null si no se encuentra.
+ */
 function getPreviousClosureDate(currentClosureDate) {
     let prevDate = new Date(currentClosureDate);
-    // Retrocedemos día a día durante un máximo de 2 meses para encontrar el cierre anterior
     for (let i = 0; i < 60; i++) {
         prevDate.setDate(prevDate.getDate() - 1);
         if (isShiftClosureDay(prevDate)) {
-            return prevDate; // Lo hemos encontrado
+            return prevDate;
         }
     }
-    return null; // No se encontró un cierre anterior
+    return null;
 }
 
-
-// Función que calcula el resumen de un periodo (VERSIÓN CORREGIDA)
+/**
+ * Calcula los días trabajados y las ganancias totales en un rango de fechas.
+ * @param {Date} startDate - Fecha de inicio del periodo.
+ * @param {Date} endDate - Fecha de fin del periodo.
+ * @returns {object} - Un objeto con los totales.
+ */
 function calculatePeriodSummary(startDate, endDate) {
     let workedDays = 0;
     let totalEarnings = 0;
     let currentDate = new Date(startDate);
 
-    // Recorremos cada día del periodo
     while (currentDate <= endDate) {
-        // Comprobamos si el día actual es de vacaciones
         const onVacation = isDateOnVacation(currentDate);
         const turn = getTurnForDate(currentDate);
         
-        // La nueva condición: solo contamos si tiene turno, no es "Descanso" Y NO es vacaciones.
         if (turn && turn.name !== 'Descanso' && !onVacation) {
             workedDays++;
             const earnings = parseFloat(calculateEarnings(turn));
@@ -1588,7 +1869,6 @@ function calculatePeriodSummary(startDate, endDate) {
             }
         }
         
-        // Pasamos al día siguiente
         currentDate.setDate(currentDate.getDate() + 1);
     }
     return { workedDays, totalEarnings };
@@ -1596,7 +1876,18 @@ function calculatePeriodSummary(startDate, endDate) {
 
 
 
-
+/**
+ * Controla la visibilidad del selector de tarifas en la modal de edición.
+ */
+overrideIsPaidCheckbox.addEventListener('change', () => {
+    if (overrideIsPaidCheckbox.checked) {
+        // Si la casilla se marca, mostramos el contenedor del selector.
+        overrideHourlyRateContainer.classList.remove('hidden');
+    } else {
+        // Si se desmarca, lo ocultamos.
+        overrideHourlyRateContainer.classList.add('hidden');
+    }
+});
 
 
 
