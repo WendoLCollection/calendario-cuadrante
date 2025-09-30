@@ -234,8 +234,6 @@ if (isDayOverridden(date)) {
 
 // --- FUNCIÓN "MÁQUINA DEL TIEMPO" PARA CALCULAR EL TURNO DE UN DÍA ---
 
-
-
 /**
  * La "máquina del tiempo": calcula el turno que corresponde a una fecha específica.
  * @param {Date} date - La fecha para la que se quiere obtener el turno.
@@ -287,6 +285,41 @@ function getTurnForDate(date) {
     }
 }
 
+
+/**
+ * Calcula el turno BASE de un día, basándose únicamente en el cuadrante.
+ * Esta función es crucial porque ignora cualquier modificación manual que se haya hecho.
+ * @param {Date} date - La fecha para la que se quiere obtener el turno base.
+ * @returns {object|null} - El objeto del turno original del cuadrante, o null.
+ */
+function getBaseTurnForDate(date) {
+    // Esta función es una copia de getTurnForDate, pero sin la parte que revisa las notas del día (dayNotes).
+    const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
+    if (candidateQuadrants.length === 0) return null;
+
+    candidateQuadrants.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    const governingQuadrant = candidateQuadrants[0];
+
+    const startDate = new Date(governingQuadrant.startDate + 'T00:00:00');
+    const diffTime = date - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    const weekOfCycle = Math.floor(diffDays / 7) % governingQuadrant.weeks;
+    const dayOfWeek = date.getDay();
+    const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const dayName = dayNames[dayOfWeek];
+
+    const turnId = governingQuadrant.patterns[weekOfCycle][dayName];
+
+    if (turnId === 'REST') {
+        return { name: 'Descanso', color: '#f0f2f5', startTime: '', endTime: '', isPaid: false };
+    } else {
+        const foundShift = shifts.find(s => s.id === Number(turnId));
+        // Devolvemos una copia para evitar modificar el original por accidente.
+        return foundShift ? { ...foundShift } : { name: 'TURNO BORRADO', color: '#ff8fa3' };
+    }
+}
+
 // --- FUNCIÓN PARA COMPROBAR SI UNA FECHA ESTÁ EN VACACIONES ---
 function isDateOnVacation(date) {
     // 'some' comprueba si al menos un periodo de vacaciones cumple la condición
@@ -296,6 +329,7 @@ function isDateOnVacation(date) {
         return date >= startDate && date <= endDate;
     });
 }
+
 
 
 // --- FUNCIÓN PARA PINTAR LA LISTA DE TURNOS ---
@@ -1877,20 +1911,36 @@ function calculatePeriodSummary(startDate, endDate) {
 
 
 /**
- * Controla la visibilidad del selector de tarifas en la modal de edición.
+ * Controla la visibilidad del selector de tarifas y auto-rellena el formulario si es necesario.
  */
 overrideIsPaidCheckbox.addEventListener('change', () => {
+    // Seleccionamos los campos del formulario que podríamos necesitar rellenar.
+    const nameInput = document.getElementById('override-shift-name');
+    const startTimeInput = document.getElementById('override-start-time');
+    const endTimeInput = document.getElementById('override-end-time');
+
+    // --- LÓGICA DE AUTO-RELLENADO ---
+    // Si el usuario marca la casilla Y el campo de nombre está vacío...
+    if (overrideIsPaidCheckbox.checked && nameInput.value.trim() === '') {
+        // ...buscamos cuál era el turno original del cuadrante para ese día.
+        const date = new Date(currentEditingDate + 'T00:00:00');
+        const baseTurn = getBaseTurnForDate(date);
+
+        // Si encontramos un turno, rellenamos el formulario con sus datos.
+        if (baseTurn) {
+            nameInput.value = baseTurn.name;
+            startTimeInput.value = baseTurn.startTime;
+            endTimeInput.value = baseTurn.endTime;
+        }
+    }
+
+    // --- Lógica para mostrar/ocultar el selector de tarifas (esta ya la teníamos) ---
     if (overrideIsPaidCheckbox.checked) {
-        // Si la casilla se marca, mostramos el contenedor del selector.
         overrideHourlyRateContainer.classList.remove('hidden');
     } else {
-        // Si se desmarca, lo ocultamos.
         overrideHourlyRateContainer.classList.add('hidden');
     }
 });
-
-
-
 
 
 
