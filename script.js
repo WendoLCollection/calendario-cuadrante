@@ -4,6 +4,8 @@
 
 // Conectamos el JavaScript con los elementos del HTML para poder manipularlos.
 // Imagina que son los mandos a distancia para controlar la tele (que es el HTML).
+
+
 const monthDisplay = document.getElementById('current-month-display');
 const calendarGrid = document.getElementById('calendar-grid');
 const prevMonthButton = document.getElementById('prev-month-button');
@@ -14,7 +16,7 @@ const calendarView = document.getElementById('calendar-view');
 const settingsView = document.getElementById('settings-view');
 const shiftsListView = document.getElementById('shifts-list-view');
 const shiftFormView = document.getElementById('shift-form-view');
-const menuItemShifts = document.querySelector('.settings-menu .settings-item'); // El botón "🎨 Turnos"
+//const menuItemShifts = document.querySelector('.settings-menu .settings-item'); // El botón "🎨 Turnos"
 const backToSettingsButton = document.getElementById('back-to-settings-button');
 const addNewShiftButton = document.getElementById('add-new-shift-button');
 const cancelShiftFormButton = document.getElementById('cancel-shift-form-button');
@@ -27,7 +29,7 @@ const appHeader = document.getElementById('app-header'); // <-- LÍNEA NUEVA
 const shiftsListContainer = document.getElementById('shifts-list-container');
 const quadrantListView = document.getElementById('quadrant-list-view');// Vistas (pantallas) de la sección de Cuadrante
 const quadrantFormView = document.getElementById('quadrant-form-view');
-const menuItemQuadrant = document.querySelector('.settings-menu .settings-item:nth-child(2)'); // El botón "🔄 Cuadrante"
+//const menuItemQuadrant = document.querySelector('.settings-menu .settings-item:nth-child(2)'); // El botón "🔄 Cuadrante"
 const backToSettingsFromQuadrantButton = document.getElementById('back-to-settings-from-quadrant-button');
 const addNewQuadrantButton = document.getElementById('add-new-quadrant-button');
 const cancelQuadrantFormButton = document.getElementById('cancel-quadrant-form-button');
@@ -42,6 +44,13 @@ const modalTotalEarnings = document.getElementById('modal-total-earnings');
 const overrideIsPaidCheckbox = document.getElementById('override-is-paid');
 const overrideHourlyRateContainer = document.getElementById('override-hourly-rate-container');
 
+// Elementos del Menú de Ajustes 
+const menuItemShifts = document.querySelector('.settings-menu .settings-item:nth-child(1)');
+const menuItemQuadrant = document.querySelector('.settings-menu .settings-item:nth-child(2)');
+const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
+const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
+const menuItemOvertime = document.querySelector('.settings-menu .settings-item:nth-child(5)');
+// const menuItemInfo = document.querySelector('.settings-menu .settings-item:nth-child(6)'); // Para la futura sección "Información"
 
 
 
@@ -151,9 +160,9 @@ function renderCalendar() {
     }
 }
 
-// --- NUEVA FUNCIÓN AUXILIAR PARA CREAR Y PINTAR CUALQUIER CELDA DE DÍA (VERSIÓN FINAL)---
+
 /**
- * Crea y pinta una celda del calendario con la jerarquía de prioridades correcta.
+ * Crea y pinta una celda del calendario con 5 secciones (día, icono, turno, inicio, fin).
  * @param {Date} date - La fecha que se va a dibujar.
  * @param {boolean} isOtherMonth - True si el día no pertenece al mes actual.
  */
@@ -166,6 +175,7 @@ function createDayCell(date, isOtherMonth) {
     }
     dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
+    // Creamos las 5 sub-secciones de la celda.
     const dayNumber = document.createElement('div');
     dayNumber.classList.add('day-number');
     dayNumber.textContent = date.getDate();
@@ -176,60 +186,55 @@ function createDayCell(date, isOtherMonth) {
     const dayShift = document.createElement('div');
     dayShift.classList.add('day-shift');
 
-    date.setHours(0, 0, 0, 0); // Normalizamos la fecha para comparaciones seguras.
+    const dayStartTime = document.createElement('div'); // <-- NUEVA SECCIÓN
+    dayStartTime.classList.add('day-start-time');
+
+    const dayEndTime = document.createElement('div');   // <-- NUEVA SECCIÓN
+    dayEndTime.classList.add('day-end-time');
+
+    date.setHours(0, 0, 0, 0);
 
     // 2. --- OBTENCIÓN DE DATOS ---
-    // Obtenemos todos los "estados" posibles del día.
     const onVacation = isDateOnVacation(date);
     const isClosure = isShiftClosureDay(date);
     const isOverridden = isDayOverridden(date);
-    // 'getTurnForDate' ya sabe que un turno editado tiene prioridad, así que nos dará el turno correcto.
     const turn = getTurnForDate(date);
 
     // 3. --- LÓGICA DE VISUALIZACIÓN POR PRIORIDAD ---
-
-    // Primero, decidimos el contenido principal (turno, color, etc.).
     if (turn) {
         dayShift.textContent = turn.name;
+        dayStartTime.textContent = turn.startTime || '--:--'; // Rellenamos la hora de inicio
+        dayEndTime.textContent = turn.endTime || '--:--';     // Rellenamos la hora de fin
         dayCell.style.backgroundColor = turn.color;
-        if (turn.isPaid) {
-            dayEmoticon.textContent = '💶';
-        }
-        // Ponemos el texto en blanco si el fondo es oscuro.
         if (isColorDark(turn.color) && !isOtherMonth) {
+            // ... (código para texto blanco en fondos oscuros)
             dayShift.style.color = 'white';
             dayNumber.style.color = 'white';
+            dayStartTime.style.color = 'white';
+            dayEndTime.style.color = 'white';
         }
     }
 
-    // Ahora, aplicamos las capas de mayor prioridad POR ENCIMA.
     if (onVacation && !isOverridden) {
-        // Si es vacaciones Y NO ha sido editado manualmente, mostramos el estilo de vacaciones.
         dayEmoticon.textContent = '🌴';
-        dayShift.textContent = ''; // Ocultamos el texto del turno
+        dayShift.textContent = 'Vacaciones';
+        dayStartTime.textContent = ''; // Limpiamos las horas en vacaciones
+        dayEndTime.textContent = '';
         dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
     }
     
-    // El borde de cierre se añade siempre, de forma independiente.
     if (isClosure) {
         dayCell.classList.add('shift-closure-day');
     }
     
-    // El icono de día editado tiene la máxima prioridad y sobreescribe a cualquier otro.
     if (isOverridden) {
         dayEmoticon.textContent = '📌';
+    } else if (!onVacation && isClosure) {
+        dayEmoticon.textContent = '✅';
+    } else if (!onVacation && turn && turn.isPaid) {
+        dayEmoticon.textContent = '💶';
     }
-
-// --- LÓGICA PARA RESALTAR EL DÍA ACTUAL ---
-const today = new Date();
-today.setHours(0, 0, 0, 0); // Normalizamos la fecha de hoy para una comparación exacta
-
-// Si la fecha de la celda que estamos dibujando es igual a la de hoy...
-if (date.getTime() === today.getTime()) {
-    dayNumber.classList.add('today'); // ...le añadimos la clase 'today'.
-}
-   
-    // La marca del domingo se añade al final.
+    
     if (date.getDay() === 0) {
         dayNumber.classList.add('sunday-text');
     }
@@ -238,10 +243,11 @@ if (date.getTime() === today.getTime()) {
     dayCell.appendChild(dayNumber);
     dayCell.appendChild(dayEmoticon);
     dayCell.appendChild(dayShift);
+    dayCell.appendChild(dayStartTime); // <-- AÑADIMOS LA NUEVA SECCIÓN
+    dayCell.appendChild(dayEndTime);   // <-- AÑADIMOS LA NUEVA SECCIÓN
     
     calendarGrid.appendChild(dayCell);
 }
-
 
 
 // --- FUNCIÓN "MÁQUINA DEL TIEMPO" PARA CALCULAR EL TURNO DE UN DÍA ---
@@ -1103,7 +1109,7 @@ function isColorDark(hexColor) {
 // ********************************************************************************************************************************************************************************************************************************************
 
 // --- Elementos de la sección ---
-const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
+//const menuItemOvertime = document.querySelector('.settings-menu .settings-item:last-child');
 const overtimeListView = document.getElementById('overtime-list-view');
 const backToSettingsFromOvertimeButton = document.getElementById('back-to-settings-from-overtime-button');
 const addNewOvertimeButton = document.getElementById('add-new-overtime-button');
@@ -1302,7 +1308,7 @@ shiftIsPaidCheckbox.addEventListener('change', () => {
 // ********************************************************************************************************************************************************************************************************************************************
 
 // --- Elementos de la sección ---
-const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
+//const menuItemVacations = document.querySelector('.settings-menu .settings-item:nth-child(3)');
 const vacationsListView = document.getElementById('vacations-list-view');
 const backToSettingsFromVacationsButton = document.getElementById('back-to-settings-from-vacations-button');
 const addNewVacationButton = document.getElementById('add-new-vacation-button');
@@ -1445,7 +1451,7 @@ vacationsListContainer.addEventListener('click', (event) => {
 // ********************************************************************************************************************************************************************************************************************************************
 
 // --- Elementos de la sección ---
-const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
+//const menuItemClosure = document.querySelector('.settings-menu .settings-item:nth-child(4)');
 const shiftClosureView = document.getElementById('shift-closure-view');
 const backToSettingsFromClosureButton = document.getElementById('back-to-settings-from-closure-button');
 const monthlyClosureList = document.getElementById('monthly-closure-list');
@@ -1658,11 +1664,11 @@ function openDayModal(dateStr) {
     // Lógica para los comentarios (funciona para cualquier caso)
     const originalTurn = getBaseTurnForDate(date);
     if (originalTurn && originalTurn.comments) {
-        shiftCommentsDisplay.textContent = `Nota del turno: ${originalTurn.comments}`;
+        shiftCommentsDisplay.textContent = ` ${originalTurn.comments}`;
         shiftCommentsDisplay.style.display = 'block';
     }
     if (dayNote.dailyComment) {
-        dailyCommentsDisplay.textContent = `Nota del día: ${dayNote.dailyComment}`;
+        dailyCommentsDisplay.textContent = ` ${dayNote.dailyComment}`;
         dailyCommentsDisplay.style.display = 'block';
     }
 

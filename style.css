@@ -92,7 +92,7 @@ body {
 /* Estilo para cada CELDA de día */
 .day-cell {
     background-color: white;
-    min-height: 90px;
+    min-height: 120px;
     display: flex;
     flex-direction: column; /* Pone los elementos internos en columna (uno encima de otro) */
 }
@@ -101,24 +101,25 @@ body {
     background-color: #f9f9f9;
 }
 
-/* Estilos para las 3 SECCIONES dentro de cada celda */
-.day-number, .day-emoticon, .day-shift {
-    flex: 1.5; /* Hace que cada sección ocupe el mismo espacio vertical */
+/* Estilos para TODAS las secciones dentro de cada celda */
+.day-number, .day-emoticon, .day-shift, .day-start-time, .day-end-time {
+    flex: 1;
     display: flex;
-    justify-content: center; /* Centrado horizontal */
-    align-items: center; /* Centrado vertical */
+    justify-content: center;
+    align-items: center;
     width: 100%;
 }
 
-/* La línea fina que separa las secciones */
-.day-number, .day-emoticon {
+/* Línea fina que separa TODAS las secciones excepto la última */
+.day-number, .day-emoticon, .day-shift, .day-start-time {
     border-bottom: 1px solid #f0f0f0;
 }
 
 /* Estilos específicos para cada sección */
-.day-number { font-weight: bold; font-size: 0.8em; }
+.day-number { font-weight: bold; font-size: 0.9em; }
 .day-emoticon { font-size: 1.2em; }
-.day-shift { font-size: 0.8em; color: #555; }
+.day-shift { font-size: 0.8em; color: #333; font-weight: bold; }
+.day-start-time, .day-end-time { font-size: 0.8em; color: #555; }
 
 /* Estilo para resaltar el número del día actual */
 .day-number.today {
