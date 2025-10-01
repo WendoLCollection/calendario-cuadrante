@@ -6,6 +6,9 @@
     <title>Calendario de Turnos</title>
     
     <link rel="stylesheet" href="style.css">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.png" type="image/png">
 </head>
 
 <body>
@@ -419,5 +422,15 @@
 
 
 </div> <script src="script.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => console.log('ServiceWorker registrado con éxito.'))
+                .catch(error => console.log('Fallo en el registro de ServiceWorker:', error));
+        });
+    }
+</script>
+
 </body>
 </html>

@@ -230,7 +230,7 @@ function createDayCell(date, isOtherMonth) {
     if (isOverridden) {
         dayEmoticon.textContent = '📌';
     } else if (!onVacation && isClosure) {
-        dayEmoticon.textContent = '✅';
+        dayEmoticon.textContent = '';
     } else if (!onVacation && turn && turn.isPaid) {
         dayEmoticon.textContent = '💶';
     }
