@@ -1,12 +1,13 @@
 const CACHE_NAME = 'turnos-cache-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/script.js',
-    '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    'index.html',
+    'style.css',
+    'script.js',
+    'manifest.json',
+    'favicon.png',
+    'logo.png',
+    'icons/icon-192x192.png',
+    'icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {
