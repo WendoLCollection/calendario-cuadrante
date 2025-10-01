@@ -152,15 +152,19 @@ function renderCalendar() {
 }
 
 // --- NUEVA FUNCIÓN AUXILIAR PARA CREAR Y PINTAR CUALQUIER CELDA DE DÍA (VERSIÓN FINAL)---
+/**
+ * Crea y pinta una celda del calendario con la jerarquía de prioridades correcta.
+ * @param {Date} date - La fecha que se va a dibujar.
+ * @param {boolean} isOtherMonth - True si el día no pertenece al mes actual.
+ */
 function createDayCell(date, isOtherMonth) {
-    // Creamos los elementos básicos de la celda
+    // 1. --- PREPARACIÓN DE LA CELDA ---
     const dayCell = document.createElement('div');
     dayCell.classList.add('day-cell');
-	// Guardamos la fecha en formato YYYY-MM-DD como un atributo
-	dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     if (isOtherMonth) {
         dayCell.classList.add('empty');
     }
+    dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
     const dayNumber = document.createElement('div');
     dayNumber.classList.add('day-number');
@@ -172,63 +176,71 @@ function createDayCell(date, isOtherMonth) {
     const dayShift = document.createElement('div');
     dayShift.classList.add('day-shift');
 
-    date.setHours(0, 0, 0, 0); // Normalizamos la fecha
+    date.setHours(0, 0, 0, 0); // Normalizamos la fecha para comparaciones seguras.
 
-    // --- LÓGICA DE PRIORIDAD MEJORADA ---
+    // 2. --- OBTENCIÓN DE DATOS ---
+    // Obtenemos todos los "estados" posibles del día.
+    const onVacation = isDateOnVacation(date);
+    const isClosure = isShiftClosureDay(date);
+    const isOverridden = isDayOverridden(date);
+    // 'getTurnForDate' ya sabe que un turno editado tiene prioridad, así que nos dará el turno correcto.
+    const turn = getTurnForDate(date);
 
-    // 1. Primero, establecemos el contenido principal (Vacaciones o Turno).
-    if (isDateOnVacation(date)) {
-        dayEmoticon.textContent = '🌴';
-        dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
-    } else {
-        const turn = getTurnForDate(date);
-        if (turn) {
-            dayShift.textContent = turn.name;
-            dayCell.style.backgroundColor = turn.color;
-            if (turn.isPaid) {
-                dayEmoticon.textContent = '💶';
-            }
-            if (isColorDark(turn.color) && !isOtherMonth) {
-                dayShift.style.color = 'white';
-                dayNumber.style.color = 'white';
-            }
+    // 3. --- LÓGICA DE VISUALIZACIÓN POR PRIORIDAD ---
+
+    // Primero, decidimos el contenido principal (turno, color, etc.).
+    if (turn) {
+        dayShift.textContent = turn.name;
+        dayCell.style.backgroundColor = turn.color;
+        if (turn.isPaid) {
+            dayEmoticon.textContent = '💶';
+        }
+        // Ponemos el texto en blanco si el fondo es oscuro.
+        if (isColorDark(turn.color) && !isOtherMonth) {
+            dayShift.style.color = 'white';
+            dayNumber.style.color = 'white';
         }
     }
 
-    // 2. AHORA, de forma independiente, comprobamos si es día de cierre.
-    // Esto nos permite añadir el borde sin importar lo que haya pasado antes.
-    if (isShiftClosureDay(date)) {
-        dayCell.classList.add('shift-closure-day'); // Añadimos SIEMPRE el borde verde.
-        
-        // Si no estamos de vacaciones, el icono de cierre (✅) tiene prioridad.
-        //if (!isDateOnVacation(date)) {
-            //dayEmoticon.textContent = '✅';
-        //}
+    // Ahora, aplicamos las capas de mayor prioridad POR ENCIMA.
+    if (onVacation && !isOverridden) {
+        // Si es vacaciones Y NO ha sido editado manualmente, mostramos el estilo de vacaciones.
+        dayEmoticon.textContent = '🌴';
+        dayShift.textContent = ''; // Ocultamos el texto del turno
+        dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
     }
     
-	// --- LÓGICA FINAL PARA EL ICONO DE DÍA EDITADO (MÁXIMA PRIORIDAD) ---
-// Después de haber decidido todos los otros iconos (vacaciones, cierre, etc.),
-// hacemos una última comprobación. Si el día fue editado manualmente...
-if (isDayOverridden(date)) {
-    // ...el icono de la chincheta (📌) tiene la última palabra y reemplaza a cualquier otro.
-    dayEmoticon.textContent = '📌';
+    // El borde de cierre se añade siempre, de forma independiente.
+    if (isClosure) {
+        dayCell.classList.add('shift-closure-day');
+    }
+    
+    // El icono de día editado tiene la máxima prioridad y sobreescribe a cualquier otro.
+    if (isOverridden) {
+        dayEmoticon.textContent = '📌';
+    }
+
+// --- LÓGICA PARA RESALTAR EL DÍA ACTUAL ---
+const today = new Date();
+today.setHours(0, 0, 0, 0); // Normalizamos la fecha de hoy para una comparación exacta
+
+// Si la fecha de la celda que estamos dibujando es igual a la de hoy...
+if (date.getTime() === today.getTime()) {
+    dayNumber.classList.add('today'); // ...le añadimos la clase 'today'.
 }
-
-
-	
-    // Lógica para marcar los Domingos en rojo (se mantiene igual).
+   
+    // La marca del domingo se añade al final.
     if (date.getDay() === 0) {
         dayNumber.classList.add('sunday-text');
     }
     
-    // "Montamos" la celda.
+    // 4. --- MONTAJE FINAL ---
     dayCell.appendChild(dayNumber);
     dayCell.appendChild(dayEmoticon);
     dayCell.appendChild(dayShift);
     
     calendarGrid.appendChild(dayCell);
 }
-
 
 
 
@@ -1583,101 +1595,101 @@ const modalEditSection = document.getElementById('modal-edit-section');
 let currentEditingDate = null; // Variable para recordar qué día estamos viendo/editando
 
 
-// --- Función para abrir y rellenar la modal (VERSIÓN FINAL Y COMPLETA) ---
+
+// --- Función para abrir y rellenar la modal (VERSIÓN CON PRIORIDAD CORREGIDA) ---
 function openDayModal(dateStr) {
     currentEditingDate = dateStr;
     const date = new Date(dateStr + 'T00:00:00');
-	
-// --- Bloque de limpieza ---
-// Quitamos el estilo especial de la cabecera por si estaba puesto de antes.
-const modalHeader = dayModal.querySelector('.modal-header');
-modalHeader.classList.remove('closure-day');
-modalClosureSummary.classList.add('hidden');
-
+    
+    // --- Elementos de la Modal ---
+    const modalHeader = dayModal.querySelector('.modal-header');
+    const modalClosureSummary = document.getElementById('modal-closure-summary');
+    
+    // --- Reseteo de la Modal ---
+    modalClosureSummary.classList.add('hidden');
+    modalHeader.classList.remove('closure-day');
     
     // Rellenamos el título
     dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Buscamos la información del día
-    const turn = getTurnForDate(date);
+    // --- Búsqueda de datos ---
+    const turn = getTurnForDate(date); // Esta función ya nos da el turno correcto (editado o del cuadrante)
     const onVacation = isDateOnVacation(date);
     const dayNote = dayNotes[dateStr] || {};
+    const isOverridden = isDayOverridden(date);
 
     // Elementos de los comentarios
     const shiftCommentsDisplay = dayModal.querySelector('#modal-shift-comments-display');
     const dailyCommentsDisplay = dayModal.querySelector('#modal-daily-comments-display');
-
-    // Reseteamos los comentarios para empezar de cero
-    shiftCommentsDisplay.textContent = '';
     shiftCommentsDisplay.style.display = 'none';
-    dailyCommentsDisplay.textContent = '';
     dailyCommentsDisplay.style.display = 'none';
 
-    // Rellenamos la sección de "Modo Vista"
-    if (onVacation) {
+    // --- LÓGICA DE PRIORIDAD PARA RELLENAR LA MODAL ---
+    
+    // 1. MÁXIMA PRIORIDAD: Si el día ha sido editado manualmente.
+    if (isOverridden && turn) {
+        dayModal.querySelector('#modal-shift-name').textContent = turn.name;
+        dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
+        dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
+        dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
+    
+    // 2. Si no, comprobamos si son vacaciones.
+    } else if (onVacation) {
         dayModal.querySelector('#modal-shift-name').textContent = 'Vacaciones';
         dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
         dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
         dayModal.querySelector('#modal-earnings').textContent = 'N/A';
-        dailyCommentsDisplay.textContent = 'Periodo de vacaciones.';
-        dailyCommentsDisplay.style.display = 'block';
-
+    
+    // 3. Si no, mostramos el turno del cuadrante.
     } else if (turn) {
         dayModal.querySelector('#modal-shift-name').textContent = turn.name;
         dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
         dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
         dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
         
-        // Lógica para mostrar los comentarios
-        if (turn.comments) {
-            shiftCommentsDisplay.textContent = `${turn.comments}`;
-            shiftCommentsDisplay.style.display = 'block';
-        }
-        if (dayNote.dailyComment) {
-            dailyCommentsDisplay.textContent = `${dayNote.dailyComment}`;
-            dailyCommentsDisplay.style.display = 'block';
-        }
-
+    // 4. Si no hay nada, es un día libre.
     } else {
         dayModal.querySelector('#modal-shift-name').textContent = 'Libre';
         dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
         dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
         dayModal.querySelector('#modal-earnings').textContent = 'N/A';
-    } if (isShiftClosureDay(date)) {
-    // Ponemos la cabecera verde
-    const modalHeader = dayModal.querySelector('.modal-header');
-    modalHeader.classList.add('closure-day');
-    
-    // --- LÓGICA DE CÁLCULO REAL ---
-    // 1. Usamos la primera herramienta para buscar el cierre anterior.
-    const prevClosureDate = getPreviousClosureDate(date);
-
-    // 2. Si lo encontramos, calculamos el resumen del periodo.
-    if (prevClosureDate) {
-        const periodStartDate = new Date(prevClosureDate);
-        periodStartDate.setDate(periodStartDate.getDate() + 1); // El periodo empieza un día después.
-
-        // Usamos la segunda herramienta para obtener los totales.
-        const summary = calculatePeriodSummary(periodStartDate, date);
-        
-        // 3. Rellenamos el resumen con los resultados.
-        document.getElementById('modal-worked-days').textContent = summary.workedDays;
-        document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
-    } else {
-        // Si no hay un cierre anterior, lo indicamos.
-        document.getElementById('modal-worked-days').textContent = 'N/A';
-        document.getElementById('modal-total-earnings').textContent = 'N/A';
     }
     
-    // Hacemos visible la sección de resumen.
-    const modalClosureSummary = document.getElementById('modal-closure-summary');
-    modalClosureSummary.classList.remove('hidden');
-}
+    // Lógica para los comentarios (funciona para cualquier caso)
+    const originalTurn = getBaseTurnForDate(date);
+    if (originalTurn && originalTurn.comments) {
+        shiftCommentsDisplay.textContent = `Nota del turno: ${originalTurn.comments}`;
+        shiftCommentsDisplay.style.display = 'block';
+    }
+    if (dayNote.dailyComment) {
+        dailyCommentsDisplay.textContent = `Nota del día: ${dayNote.dailyComment}`;
+        dailyCommentsDisplay.style.display = 'block';
+    }
+
+    // Lógica para el resumen de cierre (funciona para cualquier caso)
+    if (isShiftClosureDay(date)) {
+        modalHeader.classList.add('closure-day');
+        const prevClosureDate = getPreviousClosureDate(date);
+
+        if (prevClosureDate) {
+            const periodStartDate = new Date(prevClosureDate);
+            periodStartDate.setDate(periodStartDate.getDate() + 1);
+
+            const summary = calculatePeriodSummary(periodStartDate, date);
+            document.getElementById('modal-worked-days').textContent = summary.workedDays;
+            document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
+        } else {
+            document.getElementById('modal-worked-days').textContent = 'N/A';
+            document.getElementById('modal-total-earnings').textContent = 'N/A';
+        }
+        modalClosureSummary.classList.remove('hidden');
+    }
     
-    // Nos aseguramos de que empezamos en "Modo Vista"
+    // Mostramos la modal en "modo vista"
     switchToViewMode();
     dayModal.classList.remove('hidden');
 }
+
 
 // --- Función para cambiar a Modo Edición ---
 /**

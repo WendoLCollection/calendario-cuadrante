@@ -116,9 +116,19 @@ body {
 }
 
 /* Estilos específicos para cada sección */
-.day-number { font-weight: bold; font-size: 1.1em; }
+.day-number { font-weight: bold; font-size: 0.8em; }
 .day-emoticon { font-size: 1.2em; }
 .day-shift { font-size: 0.8em; color: #555; }
+
+/* Estilo para resaltar el número del día actual */
+.day-number.today {
+    background-color: #4a90e2; /* Azul principal de la app */
+    color: white !important;   /* Texto en blanco */
+    width: 100%;                /* Ancho del círculo */
+    font-size: 1.3em;
+   
+}
+
 
 /* Clase especial para el texto de los domingos */
 .sunday-text {
@@ -126,7 +136,19 @@ body {
 }
 
 
+/* --- Estilos para que el menú de Ajustes ocupe toda la altura --- */
 
+/* Hacemos que la pantalla de ajustes sea un contenedor flexible vertical */
+#settings-view {
+    display: flex;
+    flex-direction: column; /* Apila los elementos (cabecera, contenido, pie) en vertical */
+    min-height: 100vh; /* Altura mínima = 100% de la altura de la pantalla */
+}
+
+/* Hacemos que el contenido principal (la lista) crezca para ocupar el espacio sobrante */
+#settings-view > main {
+    flex-grow: 1;
+}
 
 
 
@@ -178,11 +200,15 @@ body {
 }
 
 /* Efecto visual al pasar el ratón por encima */
-.settings-item:hover {
+.settings-item:not(.disabled):hover {
     background-color: #f9f9f9;
 }
 
-
+/* Estilo para los items del menú deshabilitados */
+.settings-item.disabled {
+    color: #aaa; /* Texto en gris claro */
+    cursor: not-allowed; /* El cursor muestra un icono de "prohibido" */
+}
 
 
 
@@ -701,7 +727,7 @@ body {
 
 /* --- Estilos CORREGIDOS para el pie de página de Ajustes --- */
 .settings-footer {
-    padding: 20px;
+    padding: 15px;
     border-top: 1px solid #f0f0f0;
     margin-top: 10px;
     /* Nuevas propiedades para alinear en horizontal */
@@ -880,5 +906,8 @@ body {
 .modal-footer button {
     flex: 1; /* Esta propiedad hace que se repartan el espacio a partes iguales */
 }
+
+
+
 
 
