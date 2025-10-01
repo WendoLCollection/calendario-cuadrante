@@ -234,6 +234,18 @@ function createDayCell(date, isOtherMonth) {
     } else if (!onVacation && turn && turn.isPaid) {
         dayEmoticon.textContent = '💶';
     }
+	
+	// --- LÓGICA PARA RESALTAR EL DÍA ACTUAL ---
+    // Creamos una nueva fecha para "hoy" y le quitamos la hora para una comparación precisa.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Si la fecha de la celda que estamos dibujando es la misma que la de hoy...
+    if (date.getTime() === today.getTime()) {
+        // ...le añadimos la clase 'today', que le pone el círculo azul.
+        dayNumber.classList.add('today');
+    }
+
     
     if (date.getDay() === 0) {
         dayNumber.classList.add('sunday-text');
