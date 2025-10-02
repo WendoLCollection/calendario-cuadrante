@@ -1974,6 +1974,23 @@ overrideIsPaidCheckbox.addEventListener('change', () => {
 
 
 
+// ===============================================================
+// --- LÓGICA PARA ACTUALIZAR EL DÍA "HOY" AUTOMÁTICAMENTE ---
+// ===============================================================
+
+/**
+ * Este "oyente" se activa cada vez que la pestaña de la aplicación se vuelve visible.
+ */
+document.addEventListener('visibilitychange', () => {
+    // Si el estado de la pestaña es "visible"...
+    if (document.visibilityState === 'visible') {
+        // ...volvemos a dibujar el calendario.
+        // La función renderCalendar ya sabe cómo encontrar el día de hoy y destacarlo.
+        console.log('La aplicación se ha vuelto visible. Actualizando calendario...');
+        renderCalendar();
+    }
+})
+	;
 
 
 
