@@ -17,7 +17,7 @@
         
         <header id="app-header">
             <h1 class="header-title">📅 Calendario de Turnos</h1>
-            <button id="settings-button" class="header-button">Ajustes </button>
+            <button id="settings-button" class="header-button">Configuración</button>
         </header>
 
         <main id="calendar-view">
@@ -57,6 +57,9 @@
 								<li class="settings-item">🌴 Vacaciones</li>
 								<li class="settings-item">✅ Cierre de Turno</li>
 								<li class="settings-item">💶 Horas Extras</li>
+								<li class="settings-item">📊 Estadísticas</li>
+								
+								
 								<li class="settings-item disabled">ℹ️ Información</li> </ul>
 							</ul>
 						</main>
@@ -314,6 +317,51 @@
 </div>
 
 <!-- *************** Horas extra   *************************-->
+
+
+<!-- *************** Estadísticas   *************************-->
+
+<div id="stats-view" class="view hidden">
+    <header class="view-header">
+        <button id="back-to-settings-from-stats-button" class="header-button">←</button>
+        <h1 class="header-title">Estadísticas de Horas</h1>
+    </header>
+
+    <main id="stats-container">
+        <div class="stats-section">
+            <h2>Resumen de Horas por Cuadrante</h2>
+            <div id="quadrant-summary-container">
+                </div>
+        </div>
+
+			<div class="stats-section">
+				<h2>Resumen Mensual y Anual</h2>
+				
+				<div id="summary-year-selector">
+					<button id="prev-year-summary-button">&lt;</button>
+					<h3 id="current-year-summary-display">2025</h3>
+					<button id="next-year-summary-button">&gt;</button>
+				</div>
+
+				<div class="mode-toggle">
+					<span>Mes Completo</span>
+					<label class="switch">
+						<input type="checkbox" id="summary-mode-toggle">
+						<span class="slider"></span>
+					</label>
+					<span>De Cierre a Cierre</span>
+				</div>
+
+				<div id="summary-results-container">
+					</div>
+			</div>
+		
+    </main>
+</div>
+
+<!-- *************** Estadísticas   *************************-->
+
+
 
 <!-- *************** ventana modal*************************-->
 <div id="day-modal" class="modal-backdrop hidden">

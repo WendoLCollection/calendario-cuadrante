@@ -52,7 +52,16 @@ const menuItemClosure = document.querySelector('.settings-menu .settings-item:nt
 const menuItemOvertime = document.querySelector('.settings-menu .settings-item:nth-child(5)');
 // const menuItemInfo = document.querySelector('.settings-menu .settings-item:nth-child(6)'); // Para la futura sección "Información"
 
-
+// Elementos de la Sección "Estadísticas"
+const statsView = document.getElementById('stats-view');
+const menuItemStats = document.querySelector('.settings-menu .settings-item:nth-child(6)');
+const backToSettingsFromStatsButton = document.getElementById('back-to-settings-from-stats-button');
+// Nuevos elementos del resumen mensual/anual
+const summaryYearDisplay = document.getElementById('current-year-summary-display');
+const prevYearSummaryBtn = document.getElementById('prev-year-summary-button');
+const nextYearSummaryBtn = document.getElementById('next-year-summary-button');
+const summaryModeToggle = document.getElementById('summary-mode-toggle');
+const summaryResultsContainer = document.getElementById('summary-results-container');
 
 
 
@@ -104,6 +113,11 @@ let shiftClosures = {};
 
 // --- crear la memoria de las excepciones: ---
 let dayNotes = {}; // Guardará { 'YYYY-MM-DD': { nota, nuevoTurnoId } }
+
+
+let summaryYear = new Date().getFullYear(); // Para saber qué año estamos viendo en las estadísticas
+let summaryMode = 'fullMonth'; // Para saber el modo de cálculo: 'fullMonth' o 'closureToClosure'
+
 
 
 
@@ -559,6 +573,126 @@ function renderQuadrantsList() {
         allQuadrantsList.appendChild(quadrantItem);
     });
 }
+
+/**
+ * Dibuja el resumen de horas (semanal y bisemanal) por cada cuadrante.
+ */
+function renderQuadrantSummary() {
+    const container = document.getElementById('quadrant-summary-container');
+    container.innerHTML = ''; // Limpiamos el contenido anterior.
+
+    if (quadrants.length === 0) {
+        container.innerHTML = '<p>No has creado ningún cuadrante para analizar.</p>';
+        return;
+    }
+
+    quadrants.forEach(quad => {
+        // Obtenemos la lista de horas por semana.
+        const weeklyHours = calculateQuadrantWeeklyHours(quad);
+        
+		// --- CORREGIDO: Calculamos las horas bisemanales de forma circular ---
+		const biweeklyHours = [];
+		const numWeeks = weeklyHours.length;
+		if (numWeeks > 1) { // Solo calculamos si hay más de una semana
+			for (let i = 0; i < numWeeks; i++) {
+				const week1 = weeklyHours[i];
+				// El truco del '%' (módulo) hace que vuelva a la primera semana al llegar al final
+				const week2 = weeklyHours[(i + 1) % numWeeks]; 
+				biweeklyHours.push(week1 + week2);
+			}
+		}
+        
+        // --- MODIFICADO: Formateamos la fecha para incluir el día ---
+        const startDate = new Date(quad.startDate + 'T00:00:00');
+        const formattedDate = startDate.toLocaleDateString('es-ES', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
+
+        // Creamos el HTML para el resumen semanal.
+        let weeksSummaryHTML = weeklyHours.map((hours, index) => {
+            return `<li>Semana ${index + 1}: <strong>${hours.toFixed(2)}H</strong></li>`; // <-- "H" en lugar de "horas"
+        }).join('');
+
+        // --- NUEVO: Creamos el HTML para el resumen bisemanal ---
+        let biweeksSummaryHTML = biweeklyHours.map((hours, index) => {
+            return `<li>bisemanal ${index + 1}: <strong>${hours.toFixed(2)} H</strong></li>`;
+        }).join('');
+
+        // Creamos la "tarjeta" de HTML para este cuadrante con la nueva estructura de dos columnas.
+        const quadrantCard = document.createElement('div');
+        quadrantCard.classList.add('summary-card');
+        quadrantCard.innerHTML = `
+            <h4>Cuadrante que inicia el ${formattedDate}</h4>
+            <div class="summary-columns">
+                <div class="summary-column">
+                    <h5>Semanas</h5>
+                    <ul>${weeksSummaryHTML}</ul>
+                </div>
+                <div class="summary-column">
+                    <h5>Quincenas</h5>
+                    <ul>${biweeksSummaryHTML}</ul>
+                </div>
+            </div>
+        `;
+        container.appendChild(quadrantCard);
+    });
+}
+
+
+// --- LÓGICA PARA EL DESPLEGABLE DE ESTADÍSTICAS (VERSIÓN ACORDEÓN) ---
+const quadrantSummaryContainer = document.getElementById('quadrant-summary-container');
+
+quadrantSummaryContainer.addEventListener('click', (event) => {
+    // Comprobamos si el clic fue en un título H4
+    if (event.target.tagName === 'H4') {
+        const clickedCard = event.target.closest('.summary-card');
+        if (!clickedCard) return;
+
+        // Buscamos todas las tarjetas en el contenedor
+        const allCards = quadrantSummaryContainer.querySelectorAll('.summary-card');
+
+        // Recorremos todas las tarjetas para cerrar las que no hemos pulsado
+        allCards.forEach(card => {
+            // Si la tarjeta es diferente a la que hemos pulsado...
+            if (card !== clickedCard) {
+                // ...la cerramos quitándole la clase 'expanded'.
+                card.classList.remove('expanded');
+            }
+        });
+
+        // Finalmente, abrimos (o cerramos) la tarjeta que sí hemos pulsado.
+        clickedCard.classList.toggle('expanded');
+    }
+});
+
+
+/**
+ * Calcula las horas trabajadas totales en un rango de fechas.
+ * @param {Date} startDate - La fecha de inicio del periodo.
+ * @param {Date} endDate - La fecha de fin del periodo.
+ * @returns {number} - El total de horas trabajadas.
+ */
+function calculateTotalHoursForPeriod(startDate, endDate) {
+    let totalHours = 0;
+    let currentDate = new Date(startDate);
+
+    // Bucle que recorre cada día del periodo
+    while (currentDate <= endDate) {
+        // Comprobamos que el día no sea de vacaciones
+        if (!isDateOnVacation(currentDate)) {
+            const turn = getTurnForDate(currentDate);
+            // Si hay turno y no es "Descanso", sumamos sus horas
+            if (turn && turn.name !== 'Descanso') {
+                const hoursString = calculateTotalHours(turn.startTime, turn.endTime);
+                totalHours += parseFloat(hoursString) || 0;
+            }
+        }
+        // Pasamos al día siguiente
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return totalHours;
+}
+
 
 
 
@@ -1626,6 +1760,7 @@ function openDayModal(dateStr) {
     // --- Reseteo de la Modal ---
     modalClosureSummary.classList.add('hidden');
     modalHeader.classList.remove('closure-day');
+	modalHeader.classList.remove('earnings-day');
     
     // Rellenamos el título
     dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1663,8 +1798,19 @@ function openDayModal(dateStr) {
         dayModal.querySelector('#modal-shift-name').textContent = turn.name;
         dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
         dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
-        dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
-        
+       // dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
+
+       // Calculamos las ganancias una sola vez y las guardamos en una variable
+const earningsText = calculateEarnings(turn);
+dayModal.querySelector('#modal-earnings').textContent = earningsText;
+
+// Si las ganancias (convertidas a número) son mayores que 0, coloreamos la cabecera
+if (parseFloat(earningsText) > 0) {
+    modalHeader.classList.add('earnings-day');
+} 
+		
+		
+		
     // 4. Si no hay nada, es un día libre.
     } else {
         dayModal.querySelector('#modal-shift-name').textContent = 'Libre';
@@ -1885,7 +2031,23 @@ if (target.id === 'modal-reset-button') {
 });
 
 
+// Evento para "📊 Estadísticas"
+menuItemStats.addEventListener('click', () => {
+    // Ponemos el resumen en el año actual cada vez que entramos
+    summaryYear = new Date().getFullYear();
+    // Dibujamos ambos resúmenes
+    renderQuadrantSummary();
+    renderMonthlyAnnualSummary();
+    // Mostramos la pantalla
+    settingsView.classList.add('hidden');
+    statsView.classList.remove('hidden');
+});
 
+// Evento para el botón de volver desde Estadísticas
+backToSettingsFromStatsButton.addEventListener('click', () => {
+    statsView.classList.add('hidden');
+    settingsView.classList.remove('hidden');
+});
 
 
 
@@ -1939,6 +2101,40 @@ function calculatePeriodSummary(startDate, endDate) {
 }
 
 
+/**
+ * Calcula el total de horas para cada semana de un patrón de cuadrante.
+ * @param {object} quadrant - El objeto del cuadrante que se quiere analizar.
+ * @returns {Array<number>} - Una lista con el total de horas de cada semana. Ej: [40, 32, 40]
+ */
+function calculateQuadrantWeeklyHours(quadrant) {
+    const weeklyHours = []; // Aquí guardaremos los totales de cada semana.
+
+    // Recorremos cada patrón de semana que tenga el cuadrante.
+    quadrant.patterns.forEach(weekPattern => {
+        let totalHoursOfWeek = 0;
+
+        // Recorremos cada día de esa semana (lunes, martes, etc.).
+        for (const day in weekPattern) {
+            const turnId = weekPattern[day];
+
+            // Si el turno no es 'Descanso', buscamos su información.
+            if (turnId !== 'REST') {
+                const turn = shifts.find(s => s.id === Number(turnId));
+                // Si encontramos el turno y tiene horas definidas...
+                if (turn && turn.startTime && turn.endTime) {
+                    const hoursString = calculateTotalHours(turn.startTime, turn.endTime);
+                    totalHoursOfWeek += parseFloat(hoursString) || 0; // Sumamos las horas
+                }
+            }
+        }
+        // Añadimos el total de la semana a nuestra lista de resultados.
+        weeklyHours.push(totalHoursOfWeek);
+    });
+
+    return weeklyHours;
+}
+
+
 
 /**
  * Controla la visibilidad del selector de tarifas y auto-rellena el formulario si es necesario.
@@ -1974,6 +2170,8 @@ overrideIsPaidCheckbox.addEventListener('change', () => {
 
 
 
+
+
 // ===============================================================
 // --- LÓGICA PARA ACTUALIZAR EL DÍA "HOY" AUTOMÁTICAMENTE ---
 // ===============================================================
@@ -1989,8 +2187,104 @@ document.addEventListener('visibilitychange', () => {
         console.log('La aplicación se ha vuelto visible. Actualizando calendario...');
         renderCalendar();
     }
-})
-	;
+});
+
+
+
+
+// ===============================================================
+// --- LÓGICA PARA EL RESUMEN MENSUAL Y ANUAL ---
+// ===============================================================
+
+/**
+ * Dibuja el resumen de horas mensual y anual para un año específico.
+ */
+function renderMonthlyAnnualSummary() {
+    // Actualizamos el año que se muestra en pantalla.
+    summaryYearDisplay.textContent = summaryYear;
+    summaryResultsContainer.innerHTML = ''; // Limpiamos los resultados anteriores.
+
+    // --- Cálculo Anual ---
+    const yearStartDate = new Date(summaryYear, 0, 1);
+    const yearEndDate = new Date(summaryYear, 11, 31);
+    const totalAnnualHours = calculateTotalHoursForPeriod(yearStartDate, yearEndDate);
+
+    let monthlyResultsHTML = '';
+    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    // --- Cálculo Mensual (para cada mes) ---
+    for (let month = 0; month < 12; month++) {
+        let startDate, endDate;
+
+        if (summaryMode === 'closureToClosure') {
+            // Modo "De Cierre a Cierre"
+            const currentClosureDay = shiftClosures[month] || 24;
+            // Buscamos el cierre del mes anterior
+            const prevMonth = (month === 0) ? 11 : month - 1;
+            const prevYear = (month === 0) ? summaryYear - 1 : summaryYear;
+            const prevClosureDay = shiftClosures[prevMonth] || 24;
+            
+            startDate = new Date(prevYear, prevMonth, prevClosureDay + 1);
+            endDate = new Date(summaryYear, month, currentClosureDay);
+        } else {
+            // Modo "Mes Completo" (por defecto)
+            startDate = new Date(summaryYear, month, 1);
+            endDate = new Date(summaryYear, month + 1, 0);
+        }
+
+        const totalMonthHours = calculateTotalHoursForPeriod(startDate, endDate);
+        monthlyResultsHTML += `<li><span>${monthNames[month]}</span> <strong>${totalMonthHours.toFixed(2)} H</strong></li>`;
+    }
+
+    // "Pintamos" los resultados en el HTML.
+    summaryResultsContainer.innerHTML = `
+        <ul>
+            <li class="total-annual"><span>Total Anual</span> <strong>${totalAnnualHours.toFixed(2)} H</strong></li>
+            ${monthlyResultsHTML}
+        </ul>
+    `;
+}
+
+// --- Eventos para los botones y el interruptor ---
+
+// Botón para ir al año anterior
+prevYearSummaryBtn.addEventListener('click', () => {
+    summaryYear--;
+    renderMonthlyAnnualSummary();
+});
+
+// Botón para ir al año siguiente
+nextYearSummaryBtn.addEventListener('click', () => {
+    summaryYear++;
+    renderMonthlyAnnualSummary();
+});
+
+// Interruptor para cambiar el modo de cálculo
+summaryModeToggle.addEventListener('change', () => {
+    summaryMode = summaryModeToggle.checked ? 'closureToClosure' : 'fullMonth';
+    renderMonthlyAnnualSummary();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

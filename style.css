@@ -801,6 +801,14 @@ body {
     color: #888;
 }
 
+.modal-header.earnings-day {  /* Estilo para la cabecera de la modal en un día con ganancias */
+    background-color: #ff7447; /* Un tono rojo/salmón suave */
+    border-radius: 8px 8px 0 0;
+    margin: -20px -20px 15px -20px; /* El truco para que ocupe todo el ancho */
+    padding: 15px 20px;
+
+}
+
 .modal-section h3 {
     font-size: 0.9em;
     color: #555;
@@ -907,6 +915,237 @@ body {
 .modal-footer button {
     flex: 1; /* Esta propiedad hace que se repartan el espacio a partes iguales */
 }
+
+
+/* --- Estilos para el Menú de Ajustes (con el item "Información" abajo) --- */
+
+/* Hacemos que el contenedor principal del menú crezca y sea flexible */
+#settings-view > main {
+    flex-grow: 1;
+    display: flex; /* <-- AÑADIDO */
+}
+
+/* Hacemos que la lista del menú crezca para ocupar todo el espacio */
+.settings-menu {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* <-- AÑADIDO (más robusto que height: 100%) */
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Empujamos el último item ("Información") hacia el final */
+.settings-menu .settings-item:last-child {
+    margin-top: auto;
+}
+
+
+
+
+/* --- Estilos para la Pantalla de Estadísticas --- */
+#stats-container {
+    padding: 20px;
+	text-align: center;
+}
+
+.stats-section {
+    margin-bottom: 30px;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.stats-section h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    font-size: 1.1em;
+}
+
+
+
+.summary-card {
+    background-color: white;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+	text-align: center;
+    /* Quitamos el padding de aquí para un mejor control */
+}
+
+/* El título del cuadrante ahora es el botón para desplegar */
+.summary-card h4 {
+    margin: 0;
+    padding: 15px;
+    font-size: 0.9em;
+    color: #333;
+    cursor: pointer; /* Indica que se puede hacer clic */
+    position: relative; /* Necesario para la flecha */
+    user-select: none; /* Evita que el texto se seleccione al hacer clic */
+}
+
+/* La flecha indicadora */
+.summary-card h4::before {
+    content: '▶'; /* Flecha apuntando a la derecha */
+    margin-right: 10px;
+    font-size: 0.7em;
+    transition: transform 0.2s;
+}
+
+/* Las columnas con los detalles, ocultas por defecto */
+.summary-columns {
+    display: none; /* <-- CLAVE: Oculto por defecto */
+    gap: 20px;
+    padding: 0 15px 15px 15px; /* Añadimos el padding aquí */
+    border-top: 1px solid #f0f0f0;
+}
+
+/* --- Estilos para el ESTADO EXPANDIDO --- */
+
+/* Cuando la tarjeta está expandida, mostramos las columnas */
+.summary-card.expanded .summary-columns {
+    display: flex; /* <-- CLAVE: Lo hacemos visible */
+}
+
+/* Cuando está expandida, la flecha gira */
+.summary-card.expanded h4::before {
+    transform: rotate(90deg);
+}
+
+.summary-column {
+    flex: 1;
+}
+
+.summary-column h5 {
+    margin: 10px 0 5px 0;
+    text-align: center;
+    font-size: 0.9em;
+    color: #555;
+}
+
+
+
+/* Quitar los puntos de las listas principales */
+ul {
+    list-style: none; /* Elimina el punto o viñeta */
+    padding-left: 0;  /* Elimina el espaciado izquierdo que reserva el navegador para el punto */
+    margin: 0;        /* Opcional: elimina el margen por defecto */
+}
+
+
+
+/* --- Estilos para el Resumen Mensual y Anual --- */
+
+#summary-year-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+#summary-year-selector h3 {
+    margin: 0;
+}
+#summary-year-selector button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #4a90e2;
+}
+
+/* Estilos para el interruptor de modo */
+.mode-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: #4a90e2;
+}
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* Estilos para la lista de resultados */
+#summary-results-container ul {
+    margin-top: 15px;
+    font-size: 0.95em;
+}
+#summary-results-container li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 5px;
+    border-bottom: 1px solid #f0f0f0;
+}
+#summary-results-container li.total-annual {
+    font-weight: bold;
+    font-size: 1.1em;
+    border-top: 2px solid #ddd;
+    border-bottom: 2px solid #ddd;
+    margin-top: 10px;
+    padding: 12px 5px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
