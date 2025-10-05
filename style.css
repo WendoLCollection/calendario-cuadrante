@@ -698,7 +698,7 @@ body {
 /* --- Estilo para el CALENDARIO --- */
 /* Esta es la clase que añadirá el borde verde a la celda */
 .day-cell.shift-closure-day {
-    border: 3px solid #2a9d8f; /* Un borde verde oscuro */
+    border: 3px solid #00bb2d ; /* Un borde verde oscuro */
     padding: 0; /* Ajuste para que el borde no encoja la celda */
 }
 
