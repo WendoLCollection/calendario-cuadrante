@@ -905,7 +905,7 @@ body {
     justify-content: center; /* Centra la casilla y el texto juntos */
 }
 
-.action-button.reset {
+#modal-set-rest-button {
     color: #e63946; /* Un color rojo para que destaque */
     margin-right: auto; /* Lo empuja hacia la izquierda, separándolo del resto */
 }
@@ -1138,7 +1138,55 @@ input:checked + .slider:before {
 
 
 
+/* --- Estilos para el Tutorial de Bienvenida --- */
 
+.tutorial-content {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.tutorial-content h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.tutorial-content p {
+    color: #555;
+    line-height: 1.6;
+}
+
+.tutorial-steps {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.tutorial-steps li {
+    
+    align-items: flex-start;
+    margin-bottom: 25px;
+	text-align: left;
+}
+
+.tutorial-steps li span {
+    background-color: #4a90e2;
+    color: white;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    flex-shrink: 0; /* Evita que el círculo se encoja */
+}
 
 
 

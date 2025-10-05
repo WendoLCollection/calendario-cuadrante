@@ -450,6 +450,19 @@
 	
 
 	
+	
+    <div class="form-group-inline">
+        <div class="form-group">
+            <label for="extra-hours-input">Horas Extra</label>
+            <input type="number" id="extra-hours-input" min="0" step="0.25" placeholder="Ej: 2.5">
+        </div>
+        <div class="form-group">
+            <label for="extra-hours-rate-select">Tarifa H. Extra</label>
+            <select id="extra-hours-rate-select"></select>
+        </div>
+    </div>	
+	
+	
 </div>
 	
 </main>
@@ -461,7 +474,49 @@
 		
     </div>
 </div>
-<!-- *************** ventana modal*************************-->
+<!-- *************** ventana modal *************************-->
+
+
+<!-- *************** tutorial *************************-->
+
+<div id="welcome-tutorial" class="modal-backdrop hidden">
+    <div class="tutorial-content">
+        <h2>¡Bienvenido/a al Calendario de Turnos!</h2>
+        <p>
+            Para empezar a ver tu cuadrante en el calendario, solo necesitas seguir dos sencillos pasos:
+        </p>
+        <ol class="tutorial-steps">
+            <li><span>1</span> Ve a <strong>Configuración > 🎨 Turnos</strong> y crea los diferentes tipos de turno que tienes (ej: Mañana, Tarde, Noche).</li>
+			
+            <li><span>2</span> Luego, ve a <strong>Configuración > 🔄 Cuadrante</strong> y define tu patrón de rotación semanal.</li>
+        </ol>
+        <p>
+            Una vez hecho, ¡el calendario se rellenará automáticamente!
+        </p>
+        <button id="close-tutorial-button" class="button-primary">Entendido</button>
+    </div>
+</div>
+
+<!-- *************** tutorial *************************-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

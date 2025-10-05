@@ -62,12 +62,38 @@ const prevYearSummaryBtn = document.getElementById('prev-year-summary-button');
 const nextYearSummaryBtn = document.getElementById('next-year-summary-button');
 const summaryModeToggle = document.getElementById('summary-mode-toggle');
 const summaryResultsContainer = document.getElementById('summary-results-container');
+// Elementos del Tutorial
+const welcomeTutorial = document.getElementById('welcome-tutorial');
+const closeTutorialButton = document.getElementById('close-tutorial-button');
 
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Definimos los límites aquí para que sean fáciles de cambiar. semanal bisemanal
+const WEEKLY_HOUR_LIMIT = 55;
+const BIWEEKLY_HOUR_LIMIT = 95;
+// Definimos los límites aquí para que sean fáciles de cambiar en el futuro. mensual anual
+const MONTHLY_HOUR_LIMIT = 225;
+const ANNUAL_HOUR_LIMIT = 2160;
 
 // Paleta de 10 colores suaves para los turnos
 const SHIFT_COLORS = [
@@ -458,6 +484,11 @@ function populateQuadrantForm(weekCount) {
 function saveShifts() {
     // Convertimos la lista de turnos a texto y la guardamos en localStorage
     localStorage.setItem('calendarAppData', JSON.stringify(shifts));
+	
+	    // Comprobamos si ya se puede marcar el tutorial como completado
+    if (shifts.length > 0 && quadrants.length > 0) {
+        localStorage.setItem('calendarTutorialCompleted', 'true');
+    }
 }
 
 
@@ -475,6 +506,11 @@ function loadShifts() {
 
 function saveQuadrants() {
     localStorage.setItem('calendarAppData_quadrants', JSON.stringify(quadrants));
+	
+	    // Comprobamos si ya se puede marcar el tutorial como completado
+    if (shifts.length > 0 && quadrants.length > 0) {
+        localStorage.setItem('calendarTutorialCompleted', 'true');
+    }
 }
 
 function loadQuadrants() {
@@ -755,22 +791,39 @@ function calculateTotalHours(startTime, endTime) {
     return `${hours.toFixed(2)}h`;
 }
 
-function calculateEarnings(turn) {
-    if (!turn || !turn.isPaid || !turn.overtimeRateId) return '0.00€';
-    
-    const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
-    if (!rate) return 'Tarifa no encontrada';
-    
-    const hoursStr = calculateTotalHours(turn.startTime, turn.endTime);
-    // Extraemos solo el número de las horas (ej: de "8.00h" coge 8.00)
-    const hours = parseFloat(hoursStr);
-    
-    if (isNaN(hours)) return 'N/A';
+/**
+ * Calcula las ganancias totales de un día, sumando las del turno y las horas extras.
+ * @param {object} turn - El objeto del turno del día.
+ * @param {Date} date - La fecha del día que se está calculando.
+ * @returns {string} - Las ganancias totales formateadas, ej: "120.50€".
+ */
+function calculateEarnings(turn, date) {
+    let totalEarnings = 0;
 
-    const earnings = hours * rate.price;
-    return `${earnings.toFixed(2)}€`;
+    // 1. Calcula las ganancias del turno principal (si aplica)
+    if (turn && turn.isPaid && turn.overtimeRateId) {
+        const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
+        if (rate) {
+            const hoursStr = calculateTotalHours(turn.startTime, turn.endTime);
+            const hours = parseFloat(hoursStr);
+            if (!isNaN(hours)) {
+                totalEarnings += hours * rate.price;
+            }
+        }
+    }
+
+    // 2. Busca y suma las ganancias de las horas extras guardadas para ese día
+    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dayNote = dayNotes[dateKey];
+    if (dayNote && dayNote.extraHours) {
+        const rate = overtimeRates.find(r => r.id === Number(dayNote.extraHours.rateId));
+        if (rate) {
+            totalEarnings += dayNote.extraHours.hours * rate.price;
+        }
+    }
+
+    return `${totalEarnings.toFixed(2)}€`;
 }
-
 
 
 
@@ -819,6 +872,8 @@ renderQuadrantsList();
 renderColorSelector();
 renderCalendar();
 
+
+checkAndShowTutorial(); 
 
 
 // ********************************************************************************************************************************************************************************************************************************************
@@ -1685,15 +1740,18 @@ function isShiftClosureDay(date) {
 }
 
 
-/** Comprueba si un día ha sido modificado manualmente (tiene un turno o comentario guardado).*/
+/**
+ * Comprueba si un día ha sido modificado manualmente.
+ * @param {Date} date - La fecha a comprobar.
+ * @returns {boolean} - True si el día tiene un turno personalizado, un comentario o horas extras.
+ */
 function isDayOverridden(date) {
-    // Creamos la clave de fecha en formato 'YYYY-MM-DD'.
     const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const note = dayNotes[dateKey];
 
-    // Un día se considera "editado" si existe una nota para él y esa nota
-    // contiene un turno personalizado (overrideShift) o un comentario del día (dailyComment).
-    return note && (note.overrideShift || (note.dailyComment && note.dailyComment.trim() !== ''));
+    // Un día se considera "editado" si existe una nota para él y esa nota contiene
+    // un turno personalizado, un comentario O horas extras.
+    return note && (note.overrideShift || (note.dailyComment && note.dailyComment.trim() !== '') || note.extraHours);
 }
 
 
@@ -1756,65 +1814,51 @@ function openDayModal(dateStr) {
     currentEditingDate = dateStr;
     const date = new Date(dateStr + 'T00:00:00');
     
-    // --- Elementos de la Modal ---
     const modalHeader = dayModal.querySelector('.modal-header');
     const modalClosureSummary = document.getElementById('modal-closure-summary');
     
     // --- Reseteo de la Modal ---
     modalClosureSummary.classList.add('hidden');
     modalHeader.classList.remove('closure-day');
-	modalHeader.classList.remove('earnings-day');
+    modalHeader.classList.remove('earnings-day');
+    modalHeader.classList.remove('today-day');
     
-    // Rellenamos el título
     dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    // --- Búsqueda de datos ---
-    const turn = getTurnForDate(date); // Esta función ya nos da el turno correcto (editado o del cuadrante)
+    const turn = getTurnForDate(date);
     const onVacation = isDateOnVacation(date);
     const dayNote = dayNotes[dateStr] || {};
-    const isOverridden = isDayOverridden(date);
 
-    // Elementos de los comentarios
     const shiftCommentsDisplay = dayModal.querySelector('#modal-shift-comments-display');
     const dailyCommentsDisplay = dayModal.querySelector('#modal-daily-comments-display');
     shiftCommentsDisplay.style.display = 'none';
     dailyCommentsDisplay.style.display = 'none';
 
-    // --- LÓGICA DE PRIORIDAD PARA RELLENAR LA MODAL ---
-    
-    // 1. MÁXIMA PRIORIDAD: Si el día ha sido editado manualmente.
-    if (isOverridden && turn) {
-        dayModal.querySelector('#modal-shift-name').textContent = turn.name;
-        dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
-        dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
-        dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
-    
-    // 2. Si no, comprobamos si son vacaciones.
-    } else if (onVacation) {
+    // Rellenamos la sección de "Modo Vista"
+    if (onVacation) {
         dayModal.querySelector('#modal-shift-name').textContent = 'Vacaciones';
         dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
         dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
         dayModal.querySelector('#modal-earnings').textContent = 'N/A';
-    
-    // 3. Si no, mostramos el turno del cuadrante.
+        dailyCommentsDisplay.textContent = 'Periodo de vacaciones.';
+        dailyCommentsDisplay.style.display = 'block';
     } else if (turn) {
         dayModal.querySelector('#modal-shift-name').textContent = turn.name;
         dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
         dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
-       // dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn);
-
-       // Calculamos las ganancias una sola vez y las guardamos en una variable
-const earningsText = calculateEarnings(turn);
-dayModal.querySelector('#modal-earnings').textContent = earningsText;
-
-// Si las ganancias (convertidas a número) son mayores que 0, coloreamos la cabecera
-if (parseFloat(earningsText) > 0) {
-    modalHeader.classList.add('earnings-day');
-} 
-		
-		
-		
-    // 4. Si no hay nada, es un día libre.
+        
+        // --- LÍNEA CORREGIDA ---
+        // Ahora le pasamos la 'date' a la función de cálculo.
+        dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn, date);
+        
+        if (turn.comments) {
+            shiftCommentsDisplay.textContent = `Nota del turno: ${turn.comments}`;
+            shiftCommentsDisplay.style.display = 'block';
+        }
+        if (dayNote.dailyComment) {
+            dailyCommentsDisplay.textContent = `Nota del día: ${dayNote.dailyComment}`;
+            dailyCommentsDisplay.style.display = 'block';
+        }
     } else {
         dayModal.querySelector('#modal-shift-name').textContent = 'Libre';
         dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
@@ -1822,26 +1866,23 @@ if (parseFloat(earningsText) > 0) {
         dayModal.querySelector('#modal-earnings').textContent = 'N/A';
     }
     
-    // Lógica para los comentarios (funciona para cualquier caso)
-    const originalTurn = getBaseTurnForDate(date);
-    if (originalTurn && originalTurn.comments) {
-        shiftCommentsDisplay.textContent = ` ${originalTurn.comments}`;
-        shiftCommentsDisplay.style.display = 'block';
+    // Lógica de estilos de cabecera y resumen de cierre...
+    // (Esta parte ya la tienes bien, la incluimos para que la función esté completa)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date.getTime() === today.getTime()) {
+        modalHeader.classList.add('today-day');
     }
-    if (dayNote.dailyComment) {
-        dailyCommentsDisplay.textContent = ` ${dayNote.dailyComment}`;
-        dailyCommentsDisplay.style.display = 'block';
+    const earningsValue = parseFloat(dayModal.querySelector('#modal-earnings').textContent);
+    if (!isNaN(earningsValue) && earningsValue > 0) {
+        modalHeader.classList.add('earnings-day');
     }
-
-    // Lógica para el resumen de cierre (funciona para cualquier caso)
     if (isShiftClosureDay(date)) {
         modalHeader.classList.add('closure-day');
         const prevClosureDate = getPreviousClosureDate(date);
-
         if (prevClosureDate) {
             const periodStartDate = new Date(prevClosureDate);
             periodStartDate.setDate(periodStartDate.getDate() + 1);
-
             const summary = calculatePeriodSummary(periodStartDate, date);
             document.getElementById('modal-worked-days').textContent = summary.workedDays;
             document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
@@ -1852,11 +1893,9 @@ if (parseFloat(earningsText) > 0) {
         modalClosureSummary.classList.remove('hidden');
     }
     
-    // Mostramos la modal en "modo vista"
     switchToViewMode();
     dayModal.classList.remove('hidden');
 }
-
 
 // --- Función para cambiar a Modo Edición ---
 /**
@@ -1868,34 +1907,36 @@ if (parseFloat(earningsText) > 0) {
  * Si el día ya tiene cambios guardados, los muestra en el formulario.
  * Si no, muestra el formulario vacío.
  */
+
+/**
+ * Cambia la ventana modal a "Modo Edición", rellenando todos los campos guardados.
+ */
 function switchToEditMode() {
-    // Ocultamos la vista de información y mostramos la de edición.
     modalViewSection.classList.add('hidden');
     modalEditSection.classList.remove('hidden');
 
-    // Rellenamos el selector de tarifas por si se necesita.
+    // Rellenamos AMBOS selectores de tarifas.
     populateOvertimeSelector('override-hourly-rate');
+    populateOvertimeSelector('extra-hours-rate-select'); // <-- AÑADIDO
 
-    // Seleccionamos los elementos del formulario.
     const nameInput = document.getElementById('override-shift-name');
     const startTimeInput = document.getElementById('override-start-time');
     const endTimeInput = document.getElementById('override-end-time');
     const isPaidCheckbox = document.getElementById('override-is-paid');
     const overtimeSelector = document.getElementById('override-hourly-rate');
     const commentTextarea = document.getElementById('modal-edit-comment');
+    const extraHoursInput = document.getElementById('extra-hours-input'); // <-- NUEVO
+    const extraHoursRateSelect = document.getElementById('extra-hours-rate-select'); // <-- NUEVO
     
-    // Buscamos si existen notas o un turno personalizado para este día.
     const dayNote = dayNotes[currentEditingDate] || {};
     const overrideShift = dayNote.overrideShift;
 
-    // --- LÓGICA MODIFICADA ---
-    // Si existe un turno personalizado, rellenamos el formulario con sus datos.
+    // Rellenamos el formulario del turno personalizado (si existe).
     if (overrideShift) {
         nameInput.value = overrideShift.name || '';
         startTimeInput.value = overrideShift.startTime || '';
         endTimeInput.value = overrideShift.endTime || '';
         isPaidCheckbox.checked = overrideShift.isPaid || false;
-
         if (overrideShift.isPaid) {
             overrideHourlyRateContainer.classList.remove('hidden');
             overtimeSelector.value = overrideShift.overtimeRateId;
@@ -1903,7 +1944,6 @@ function switchToEditMode() {
             overrideHourlyRateContainer.classList.add('hidden');
         }
     } else {
-        // Si no hay turno personalizado, mostramos el formulario vacío.
         nameInput.value = '';
         startTimeInput.value = '';
         endTimeInput.value = '';
@@ -1911,15 +1951,23 @@ function switchToEditMode() {
         overrideHourlyRateContainer.classList.add('hidden');
     }
     
-    // Rellenamos siempre el comentario del día, si existe.
+    // --- NUEVO: Rellenamos el formulario de horas extras (si existen) ---
+    if (dayNote.extraHours) {
+        extraHoursInput.value = dayNote.extraHours.hours;
+        extraHoursRateSelect.value = dayNote.extraHours.rateId;
+    } else {
+        extraHoursInput.value = ''; // Limpiamos el campo si no hay horas guardadas
+    }
+
+    // Rellenamos siempre el comentario del día.
     commentTextarea.value = dayNote.dailyComment || '';
 
-    // Cambiamos los botones del pie de página a "Guardar" y "Cancelar".
-    const modalFooter = dayModal.querySelector('.modal-footer');
-    modalFooter.innerHTML = `
-        <button id="modal-cancel-button" class="action-button">Cancelar</button>
-        <button id="modal-save-button" class="button-primary">Guardar Cambios</button>
-    `;
+// Cambiamos los botones del pie de página a "Guardar" y "Cancelar".
+const modalFooter = dayModal.querySelector('.modal-footer');
+modalFooter.innerHTML = `
+    <button id="modal-set-rest-button" class="action-button reset">Poner Descanso</button> <button id="modal-cancel-button" class="action-button">Cancelar</button>
+    <button id="modal-save-button" class="button-primary">Guardar Cambios</button>
+`;
 }
 
 // --- Función para volver a Modo Vista ---
@@ -1973,58 +2021,108 @@ dayModal.addEventListener('click', (event) => {
     }
 
 	
-	
 // Si se pulsa el botón "Guardar Cambios"
 if (target.id === 'modal-save-button') {
-    // 1. Leemos todos los datos del formulario de edición.
+    // 1. Leemos TODOS los datos del formulario, incluyendo los nuevos de horas extras.
     const overrideName = document.getElementById('override-shift-name').value;
     const overrideStart = document.getElementById('override-start-time').value;
     const overrideEnd = document.getElementById('override-end-time').value;
     const overrideIsPaid = document.getElementById('override-is-paid').checked;
-    const overrideRateId = document.getElementById('override-hourly-rate').value; // <-- Leemos la tarifa seleccionada
+    const overrideRateId = document.getElementById('override-hourly-rate').value;
     const newComment = document.getElementById('modal-edit-comment').value;
+    const extraHours = parseFloat(document.getElementById('extra-hours-input').value) || 0;
+    const extraHoursRateId = document.getElementById('extra-hours-rate-select').value;
 
-    // VALIDACIÓN: Si hay un nombre de turno, las horas son obligatorias.
+    // VALIDACIÓN
     if (overrideName.trim() !== '' && (!overrideStart || !overrideEnd)) {
         alert('Si introduces un nombre de turno, también debes especificar la hora de inicio y fin.');
         return;
     }
 
+    // Preparamos el objeto de notas
     if (!dayNotes[currentEditingDate]) {
         dayNotes[currentEditingDate] = {};
     }
 
-    // 2. Comprobamos si se ha introducido un nombre de turno.
+    // --- LÓGICA PARA GUARDAR ---
+
+    // Guardamos el turno personalizado (si lo hay)
     if (overrideName.trim() !== '') {
-        // Si hay nombre, creamos y guardamos el objeto del turno personalizado.
         dayNotes[currentEditingDate].overrideShift = {
-            name: overrideName,
+            name: overrideName.trim(),
             startTime: overrideStart,
             endTime: overrideEnd,
             isPaid: overrideIsPaid,
-            overtimeRateId: overrideIsPaid ? overrideRateId : null, // <-- GUARDAMOS la tarifa
+            overtimeRateId: overrideIsPaid ? overrideRateId : null,
             color: '#e0e0e0'
         };
     } else {
         delete dayNotes[currentEditingDate].overrideShift;
     }
     
-    // 3. Guardamos siempre el comentario del día.
-    dayNotes[currentEditingDate].dailyComment = newComment;
+    // Guardamos el comentario del día
+    dayNotes[currentEditingDate].dailyComment = newComment.trim();
 
-    // 4. Hacemos los cambios permanentes y actualizamos todo.
+    // --- NUEVO: Guardamos las horas extras ---
+    if (extraHours > 0) {
+        dayNotes[currentEditingDate].extraHours = {
+            hours: extraHours,
+            rateId: extraHoursRateId
+        };
+    } else {
+        delete dayNotes[currentEditingDate].extraHours;
+    }
+
+    // Limpieza final
+    if (Object.keys(dayNotes[currentEditingDate]).length === 0) {
+        delete dayNotes[currentEditingDate];
+    }
+
+    // Actualizamos todo
     saveDayNotes();
     renderCalendar();
     dayModal.classList.add('hidden');
+}	
+
+
+
+// Si se pulsa el botón "Poner Descanso"
+if (target.id === 'modal-set-rest-button') { // Usamos el ID del botón que creamos
+    // 1. Preguntamos al usuario para confirmar la acción.
+    if (confirm('¿Quieres marcar este día como Descanso? Se sobreescribirá el turno actual.')) {
+        
+        // 2. Creamos un objeto de turno "Descanso" para usarlo como anulación.
+        const descansoShift = {
+            name: 'Descanso',
+            startTime: '',
+            endTime: '',
+            isPaid: false,
+            overtimeRateId: null,
+            color: '#f0f2f5' // Un color gris neutro
+        };
+
+        // 3. Preparamos o actualizamos la nota de este día.
+        if (!dayNotes[currentEditingDate]) {
+            dayNotes[currentEditingDate] = {};
+        }
+        dayNotes[currentEditingDate].overrideShift = descansoShift;
+        // Opcional: borramos el comentario del día si queremos que sea un reseteo completo
+        // delete dayNotes[currentEditingDate].dailyComment;
+
+        // 4. Guardamos, actualizamos y cerramos.
+        saveDayNotes();
+        renderCalendar();
+        dayModal.classList.add('hidden');
+    }
 }
 
 
 // Si se pulsa el botón "Restablecer"
 if (target.id === 'modal-reset-button') {
-    if (confirm('¿Quieres eliminar los cambios manuales de este día y volver al turno del cuadrante?')) {
+    if (confirm('¿Quieres eliminar los cambios manuales y restablecer el turno del cuadrante?')) {
         // Borramos la nota/excepción completa para este día.
         delete dayNotes[currentEditingDate];
-
+        
         saveDayNotes();      // Guardamos el cambio.
         renderCalendar();    // Actualizamos el calendario.
         dayModal.classList.add('hidden'); // Cerramos la ventana.
@@ -2054,7 +2152,7 @@ backToSettingsFromStatsButton.addEventListener('click', () => {
 
 
 
-
+ 
 
 
 // --- NUEVAS FUNCIONES DE CÁLCULO PARA EL CIERRE ---
@@ -2092,7 +2190,7 @@ function calculatePeriodSummary(startDate, endDate) {
         
         if (turn && turn.name !== 'Descanso' && !onVacation) {
             workedDays++;
-            const earnings = parseFloat(calculateEarnings(turn));
+            const earnings = parseFloat(calculateEarnings(turn, currentDate));
             if (!isNaN(earnings)) {
                 totalEarnings += earnings;
             }
@@ -2283,7 +2381,37 @@ summaryModeToggle.addEventListener('change', () => {
 
 
 
+// ===============================================================
+// --- LÓGICA DEL TUTORIAL DE BIENVENIDA ---
+// ===============================================================
 
+/**
+ * Comprueba si debe mostrar el tutorial inicial y lo hace si se cumplen las condiciones.
+ */
+function checkAndShowTutorial() {
+    // 1. Comprobamos si el tutorial ya se ha completado antes.
+    const tutorialCompleted = localStorage.getItem('calendarTutorialCompleted');
+    
+    // Si ya se completó, no hacemos nada más.
+    if (tutorialCompleted === 'true') {
+        return;
+    }
+
+    // 2. Si no se ha completado, comprobamos si la app está "vacía".
+    if (shifts.length === 0 || quadrants.length === 0) {
+        // Si lo está, mostramos la ventana del tutorial.
+        welcomeTutorial.classList.remove('hidden');
+    }
+}
+
+/**
+ * Oculta el tutorial y guarda en memoria que ya se ha completado.
+ */
+closeTutorialButton.addEventListener('click', () => {
+    welcomeTutorial.classList.add('hidden');
+    // Guardamos una "marca" para no volver a mostrarlo.
+    //localStorage.setItem('calendarTutorialCompleted', 'true');
+});
 
 
 
