@@ -575,11 +575,15 @@ function renderQuadrantsList() {
 }
 
 /**
- * Dibuja el resumen de horas (semanal y bisemanal) por cada cuadrante.
+ * Dibuja el resumen de horas (semanal y bisemanal), destacando los que superan el límite.
  */
 function renderQuadrantSummary() {
+    // Definimos los límites aquí para que sean fáciles de cambiar. semanal bisemanal
+    const WEEKLY_HOUR_LIMIT = 55;
+    const BIWEEKLY_HOUR_LIMIT = 95;
+
     const container = document.getElementById('quadrant-summary-container');
-    container.innerHTML = ''; // Limpiamos el contenido anterior.
+    container.innerHTML = '';
 
     if (quadrants.length === 0) {
         container.innerHTML = '<p>No has creado ningún cuadrante para analizar.</p>';
@@ -587,38 +591,37 @@ function renderQuadrantSummary() {
     }
 
     quadrants.forEach(quad => {
-        // Obtenemos la lista de horas por semana.
         const weeklyHours = calculateQuadrantWeeklyHours(quad);
         
-		// --- CORREGIDO: Calculamos las horas bisemanales de forma circular ---
-		const biweeklyHours = [];
-		const numWeeks = weeklyHours.length;
-		if (numWeeks > 1) { // Solo calculamos si hay más de una semana
-			for (let i = 0; i < numWeeks; i++) {
-				const week1 = weeklyHours[i];
-				// El truco del '%' (módulo) hace que vuelva a la primera semana al llegar al final
-				const week2 = weeklyHours[(i + 1) % numWeeks]; 
-				biweeklyHours.push(week1 + week2);
-			}
-		}
+        const biweeklyHours = [];
+        const numWeeks = weeklyHours.length;
+        if (numWeeks > 1) {
+            for (let i = 0; i < numWeeks; i++) {
+                const week1 = weeklyHours[i];
+                const week2 = weeklyHours[(i + 1) % numWeeks];
+                biweeklyHours.push(week1 + week2);
+            }
+        }
         
-        // --- MODIFICADO: Formateamos la fecha para incluir el día ---
         const startDate = new Date(quad.startDate + 'T00:00:00');
         const formattedDate = startDate.toLocaleDateString('es-ES', {
             day: 'numeric', month: 'long', year: 'numeric'
         });
 
-        // Creamos el HTML para el resumen semanal.
+        // --- LÓGICA MODIFICADA PARA SEMANAS ---
+        // Ahora comprueba si las horas semanales superan el límite de 40.
         let weeksSummaryHTML = weeklyHours.map((hours, index) => {
-            return `<li>Semana ${index + 1}: <strong>${hours.toFixed(2)}H</strong></li>`; // <-- "H" en lugar de "horas"
+            const limitClass = hours > WEEKLY_HOUR_LIMIT ? 'over-limit' : '';
+            return `<li>S${index + 1}: <strong class="${limitClass}">${hours.toFixed(2)}H</strong></li>`;
         }).join('');
 
-        // --- NUEVO: Creamos el HTML para el resumen bisemanal ---
+        // --- LÓGICA MODIFICADA PARA QUINCENAS ---
+        // Ahora comprueba si las horas bisemanales superan el límite de 95.
         let biweeksSummaryHTML = biweeklyHours.map((hours, index) => {
-            return `<li>bisemanal ${index + 1}: <strong>${hours.toFixed(2)} H</strong></li>`;
+            const limitClass = hours > BIWEEKLY_HOUR_LIMIT ? 'over-limit' : '';
+            return `<li>B${index + 1}: <strong class="${limitClass}">${hours.toFixed(2)}H</strong></li>`;
         }).join('');
 
-        // Creamos la "tarjeta" de HTML para este cuadrante con la nueva estructura de dos columnas.
         const quadrantCard = document.createElement('div');
         quadrantCard.classList.add('summary-card');
         quadrantCard.innerHTML = `
@@ -2197,29 +2200,33 @@ document.addEventListener('visibilitychange', () => {
 // ===============================================================
 
 /**
- * Dibuja el resumen de horas mensual y anual para un año específico.
+ * Dibuja el resumen de horas mensual y anual, destacando los totales que superan el límite.
  */
 function renderMonthlyAnnualSummary() {
-    // Actualizamos el año que se muestra en pantalla.
+    // Definimos los límites aquí para que sean fáciles de cambiar en el futuro. mensual anual
+    const MONTHLY_HOUR_LIMIT = 225;
+    const ANNUAL_HOUR_LIMIT = 2160;
+
     summaryYearDisplay.textContent = summaryYear;
-    summaryResultsContainer.innerHTML = ''; // Limpiamos los resultados anteriores.
+    summaryResultsContainer.innerHTML = '';
 
     // --- Cálculo Anual ---
     const yearStartDate = new Date(summaryYear, 0, 1);
     const yearEndDate = new Date(summaryYear, 11, 31);
     const totalAnnualHours = calculateTotalHoursForPeriod(yearStartDate, yearEndDate);
 
+    // Comprobamos si el total anual supera el límite.
+    const annualLimitClass = totalAnnualHours > ANNUAL_HOUR_LIMIT ? 'over-limit' : '';
+
     let monthlyResultsHTML = '';
     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-    // --- Cálculo Mensual (para cada mes) ---
+    // --- Cálculo Mensual ---
     for (let month = 0; month < 12; month++) {
         let startDate, endDate;
-
+        // ... (el resto de la lógica para calcular startDate y endDate sigue igual) ...
         if (summaryMode === 'closureToClosure') {
-            // Modo "De Cierre a Cierre"
             const currentClosureDay = shiftClosures[month] || 24;
-            // Buscamos el cierre del mes anterior
             const prevMonth = (month === 0) ? 11 : month - 1;
             const prevYear = (month === 0) ? summaryYear - 1 : summaryYear;
             const prevClosureDay = shiftClosures[prevMonth] || 24;
@@ -2227,19 +2234,22 @@ function renderMonthlyAnnualSummary() {
             startDate = new Date(prevYear, prevMonth, prevClosureDay + 1);
             endDate = new Date(summaryYear, month, currentClosureDay);
         } else {
-            // Modo "Mes Completo" (por defecto)
             startDate = new Date(summaryYear, month, 1);
             endDate = new Date(summaryYear, month + 1, 0);
         }
 
         const totalMonthHours = calculateTotalHoursForPeriod(startDate, endDate);
-        monthlyResultsHTML += `<li><span>${monthNames[month]}</span> <strong>${totalMonthHours.toFixed(2)} H</strong></li>`;
+        
+        // Comprobamos si el total mensual supera el límite.
+        const monthlyLimitClass = totalMonthHours > MONTHLY_HOUR_LIMIT ? 'over-limit' : '';
+        
+        monthlyResultsHTML += `<li><span>${monthNames[month]}</span> <strong class="${monthlyLimitClass}">${totalMonthHours.toFixed(2)} H</strong></li>`;
     }
 
-    // "Pintamos" los resultados en el HTML.
+    // "Pintamos" los resultados en el HTML, aplicando la clase si es necesario.
     summaryResultsContainer.innerHTML = `
         <ul>
-            <li class="total-annual"><span>Total Anual</span> <strong>${totalAnnualHours.toFixed(2)} H</strong></li>
+            <li class="total-annual"><span>Total Anual</span> <strong class="${annualLimitClass}">${totalAnnualHours.toFixed(2)} H</strong></li>
             ${monthlyResultsHTML}
         </ul>
     `;

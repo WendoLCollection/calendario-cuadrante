@@ -1127,7 +1127,11 @@ input:checked + .slider:before {
 
 
 
-
+/* Estilo para los totales de horas que superan el límite */
+.over-limit {
+    color: #e63946; /* Rojo */
+    font-weight: bold;
+}
 
 
 
