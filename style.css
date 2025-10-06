@@ -64,21 +64,46 @@ body {
 
 /* --- ESTILOS DE LA REJILLA DEL CALENDARIO --- */
 
-/* --- ESTILOS DE LOS DÍAS DE LA SEMANA --- */
+/* --- ESTILOS CORREGIDOS DE LOS DÍAS DE LA SEMANA --- */
+
+/* Contenedor de los días de la semana */
 #weekdays {
     display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7 columnas iguales */
-    background-color: #f7f7f7; /* Un fondo gris claro */
-    border-bottom: 1px solid #e0e0e0;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px; /* <-- Añadimos el mismo espaciado que la rejilla principal */
+    background-color: #e0e0e0; /* <-- Añadimos el mismo fondo para las "líneas" */
+    border-top: 1px solid #e0e0e0; /* Para consistencia visual */
 }
 
+/* Celda para cada día (Lun, Mar, etc.) */
 .weekday {
-    text-align: center; /* Centramos el texto */
-    padding: 10px 0; /* Espaciado vertical */
-    font-weight: bold; /* En negrita */
+    text-align: center;
+    padding: 10px 0;
+    font-weight: bold;
     font-size: 0.9em;
-    color: #555; /* Un color de texto gris oscuro */
+    color: #555;
+    background-color: #f7f7f7; /* <-- Añadimos un fondo para que se vea sobre las líneas */
 }
+
+/* 1. Forzamos a que las celdas del calendario puedan encogerse */
+.weekday,
+.day-cell {
+    min-width: 0; /* ¡Esta es la regla clave! Permite que la celda sea más estrecha que su contenido */
+}
+
+/* 2. Aplicamos el truncamiento de texto a los elementos que pueden ser largos */
+.weekday,
+.day-shift {
+    white-space: nowrap;     /* Impide que el texto salte a otra línea */
+    overflow: hidden;        /* Oculta el texto que sobra */
+    text-overflow: ellipsis; /* Añade los "..." al final del texto cortado */
+    /* Nos aseguramos de que el centrado siga funcionando */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+	
+}
+
 
 #calendar-grid {
     display: grid;
@@ -1192,7 +1217,46 @@ input:checked + .slider:before {
 
 
 
+/* --- Estilos para la Pantalla de Login --- */
+#login-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+}
 
+.login-container {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 400px;
+}
+
+.login-container h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.5em;
+}
+
+.login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.error-message {
+    color: #e63946;
+    background-color: #ffddd2;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
 
 
 
