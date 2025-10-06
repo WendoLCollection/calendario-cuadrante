@@ -1851,14 +1851,39 @@ function openDayModal(dateStr) {
         // Ahora le pasamos la 'date' a la función de cálculo.
         dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn, date);
         
-        if (turn.comments) {
-            shiftCommentsDisplay.textContent = `Nota del turno: ${turn.comments}`;
-            shiftCommentsDisplay.style.display = 'block';
-        }
-        if (dayNote.dailyComment) {
-            dailyCommentsDisplay.textContent = `Nota del día: ${dayNote.dailyComment}`;
-            dailyCommentsDisplay.style.display = 'block';
-        }
+// --- Lógica para mostrar los comentarios (VERSIÓN ACTUALIZADA) ---
+
+// Primero, preparamos el texto para el comentario general del turno.
+let shiftCommentText = '';
+if (turn && turn.comments) {
+    shiftCommentText = ` ${turn.comments}`;
+}
+
+// Ahora, comprobamos si hay horas extras para añadir un segundo mensaje.
+if (dayNote && dayNote.extraHours) {
+    // Si ya había un comentario de turno, añadimos un salto de línea para separar.
+    if (shiftCommentText !== '') {
+        shiftCommentText += '<br>'; 
+    }
+    // Añadimos el texto de las horas extras.
+    shiftCommentText += `Horas extras añadidas: +${dayNote.extraHours.hours}H`;
+}
+
+// Si hemos generado algún texto para la sección de comentarios del turno, la mostramos.
+if (shiftCommentText !== '') {
+    shiftCommentsDisplay.textContent = shiftCommentText;
+    shiftCommentsDisplay.style.display = 'block';
+}
+
+// La lógica para el comentario específico del día se mantiene igual.
+if (dayNote.dailyComment) {
+    dailyCommentsDisplay.textContent = ` ${dayNote.dailyComment}`;
+    dailyCommentsDisplay.style.display = 'block';
+	shiftCommentsDisplay.innerHTML = shiftCommentText;
+}
+		
+		
+		
     } else {
         dayModal.querySelector('#modal-shift-name').textContent = 'Libre';
         dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';

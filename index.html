@@ -16,7 +16,7 @@
     <div id="app-container">
         
         <header id="app-header">
-            <h1 class="header-title">📅 Calendario de Turnos</h1>
+            <h1 class="header-title">📅Turno de ... </h1>
             <button id="settings-button" class="header-button">Ajustes</button>
         </header>
 
@@ -362,6 +362,31 @@
 <!-- *************** Estadísticas   *************************-->
 
 
+<!-- *************** Login   *************************
+
+<div id="login-view">
+    <div class="login-container">
+        <h1>📅 Calendario de Turnos</h1>
+        <div class="form-group">
+            <label for="login-email">Correo Electrónico</label>
+            <input type="email" id="login-email" placeholder="tu@email.com">
+        </div>
+        <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <input type="password" id="login-password" placeholder="••••••••">
+        </div>
+        <div class="login-actions">
+            <button id="login-button" class="button-primary">Iniciar Sesión</button>
+            <button id="register-button" class="action-button">Registrarse</button>
+        </div>
+        <p id="login-error-message" class="error-message hidden"></p>
+    </div>
+</div>
+
+
+ *************** Login   *************************-->
+
+
 
 <!-- *************** ventana modal*************************-->
 <div id="day-modal" class="modal-backdrop hidden">
@@ -396,7 +421,7 @@
         </div>
 
         <div id="modal-closure-summary" class="modal-section hidden">
-            <h3>Resumen del Periodo de Cierre</h3>
+            <h3>Resumen del Cierre</h3>
             <div class="info-grid">
                 <div class="info-item">
                     <span>Días trabajados:</span>
@@ -516,8 +541,24 @@
 
 
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+<script>
+  // Tu configuración de Firebase (esto no cambia)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBuQfyrG9oYI86NBz02Qh1zEI3FhqSkD-k",
+    authDomain: "calendario-turnos-f35fb.firebaseapp.com",
+    projectId: "calendario-turnos-f35fb",
+    storageBucket: "calendario-turnos-f35fb.appspot.com",
+    messagingSenderId: "48212009705",
+    appId: "1:48212009705:web:945a9eb280ebdd8eb54678"
+  };
 
+  // Inicializar Firebase
+  firebase.initializeApp(firebaseConfig);
+</script>
 
 
 
