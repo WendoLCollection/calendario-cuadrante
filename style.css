@@ -699,13 +699,18 @@ body {
 /* --- Estilo para el CALENDARIO --- */
 /* Esta es la clase que añadirá el borde verde a la celda */
 .day-cell.shift-closure-day {
-    /*border: 3px solid #00bb2d ; /* Un borde verde oscuro */
+   /* border: 3px solid #00bb2d ; /* Un borde verde oscuro */
     /*padding: 0; /* Ajuste para que el borde no encoja la celda */
-	 background-color: #e9f5db !important;
+	/* background-color: #e9f5db !important;*/
 	
 }
 
-
+.day-cell.shift-closure-day .day-number {
+    border: 2px solid #00bb2d; /* Un verde más vivo */
+   /* border-radius: 5px; /* Redondeamos un poco las esquinas */
+    background-color:#e9f5db;
+	color: #00bb2d !important;
+}
 
 
 /* Estilo para el selector de año de la sección "Cierre de Turno" */
