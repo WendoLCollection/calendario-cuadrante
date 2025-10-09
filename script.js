@@ -1349,7 +1349,8 @@ function renderOvertimeList() {
                 </div>
                 <div class="rate-actions">
                     <button class="action-button edit-rate" data-id="${rate.id}">Editar</button>
-                    <button class="action-button delete-rate" data-id="${rate.id}">Eliminar</button>
+                    
+					<button class="action-button delete" data-id="${rate.id}">Eliminar</button>
                 </div>
             `;
             overtimeListContainer.appendChild(rateItem);
@@ -1417,7 +1418,7 @@ overtimeListContainer.addEventListener('click', (event) => {
     }
 
     // ELIMINAR una tarifa existente
-    if (target.classList.contains('delete-rate')) {
+	if (target.classList.contains('delete')) {
         const rateIdToDelete = Number(target.dataset.id);
         if (confirm('¿Estás seguro de que quieres eliminar esta tarifa?')) {
             overtimeRates = overtimeRates.filter(rate => rate.id !== rateIdToDelete);

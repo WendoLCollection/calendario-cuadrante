@@ -651,7 +651,7 @@ body {
 .day-cell.empty:hover {
     opacity: 1;
 }
-
+6
 
 
 /* =============================================================== */
@@ -1338,9 +1338,12 @@ input:checked + .slider:before {
 
 
 
-
-
-
+/* Anulación específica para alinear a la derecha los botones de ciertas listas */
+.shift-actions,
+.rate-actions {
+    justify-content: flex-end; /* 'flex-end' significa alinear al final (a la derecha) */
+	margin-right: 15px;
+}
 
 
 
