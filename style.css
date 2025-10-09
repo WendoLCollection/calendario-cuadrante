@@ -166,19 +166,6 @@ body {
 }
 
 
-/* --- Estilos para que el menú de Ajustes ocupe toda la altura --- */
-
-/* Hacemos que la pantalla de ajustes sea un contenedor flexible vertical */
-#settings-view {
-    display: flex;
-    flex-direction: column; /* Apila los elementos (cabecera, contenido, pie) en vertical */
-    min-height: 100vh; /* Altura mínima = 100% de la altura de la pantalla */
-}
-
-/* Hacemos que el contenido principal (la lista) crezca para ocupar el espacio sobrante */
-#settings-view > main {
-    flex-grow: 1;
-}
 
 
 
@@ -215,30 +202,9 @@ body {
 }
 
 
-/* --- Estilos para el menú de opciones --- */
-.settings-menu {
-    list-style: none; /* Quitamos los puntos de la lista */
-    margin: 0;
-    padding: 0;
-}
 
-.settings-item {
-    padding: 20px;
-    border-bottom: 1px solid #f0f0f0; /* Línea fina de separación */
-    cursor: pointer; /* La manita para indicar que se puede hacer clic */
-    font-size: 1.1em;
-}
 
-/* Efecto visual al pasar el ratón por encima */
-.settings-item:not(.disabled):hover {
-    background-color: #f9f9f9;
-}
 
-/* Estilo para los items del menú deshabilitados */
-.settings-item.disabled {
-    color: #aaa; /* Texto en gris claro */
-    cursor: not-allowed; /* El cursor muestra un icono de "prohibido" */
-}
 
 
 
@@ -733,32 +699,35 @@ body {
     cursor: pointer; /* El cursor se convierte en una manita */
 }
 
-
 /* --- Estilos CORREGIDOS para el pie de página de Ajustes --- */
 .settings-footer {
-    padding: 15px;
+    padding: 8px;
+	padding-bottom: 8px;
     border-top: 1px solid #f0f0f0;
-    margin-top: 10px;
-    /* Nuevas propiedades para alinear en horizontal */
+    margin-top: 0px;
+    /* Propiedades para centrar todo en horizontal */
     display: flex;
-    justify-content: left; /* Centra el conjunto (logo + texto) */
-    align-items: center;     /* Centra verticalmente el logo con el texto */
-    gap: 10px;               /* Espacio entre el logo y el texto */
-}
-
-.footer-logo {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    margin-bottom: 0; /* Quitamos el margen inferior que ya no es necesario */
+    flex-direction: row; /* <-- Cambiamos a 'row' (fila) */
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 
 .footer-text {
     font-size: 0.8em;
     color: #888;
     line-height: 1.4;
-    text-align: left; /* Alineamos el texto a la izquierda */
+    text-align: left; /* <-- Lo volvemos a alinear a la izquierda */
 }
+
+
+.footer-logo {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    margin-bottom: 0; /* Quitamos el margen inferior que ya no es necesario */
+}
+
 
 
 
@@ -911,29 +880,6 @@ body {
 
 
 
-
-/* --- Estilos para el Menú de Ajustes (con el item "Información" abajo) --- */
-
-/* Hacemos que el contenedor principal del menú crezca y sea flexible */
-#settings-view > main {
-    flex-grow: 1;
-    display: flex; /* <-- AÑADIDO */
-}
-
-/* Hacemos que la lista del menú crezca para ocupar todo el espacio */
-.settings-menu {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* <-- AÑADIDO (más robusto que height: 100%) */
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-/* Empujamos el último item ("Información") hacia el final */
-.settings-menu .settings-item:last-child {
-    margin-top: auto;
-}
 
 
 
@@ -1346,33 +1292,131 @@ input:checked + .slider:before {
 }
 
 
+/* =============================================================== */
+/* --- NUEVO DISEÑO DEL MENÚ DE AJUSTES (TARJETAS) --- */
+/* =============================================================== */
+
+
+/* Estilo de cada tarjeta */
+.settings-item {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    
+    /* Centramos el contenido (icono y texto) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Efecto al pasar el ratón */
+.settings-item:not(.disabled):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo para el icono dentro de la tarjeta */
+.menu-icon {
+    font-size: 2.5em;
+}
+
+/* Estilo para el texto dentro de la tarjeta */
+.menu-label {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #333;
+}
+
+/* Estilo para las tarjetas deshabilitadas */
+.settings-item.disabled {
+    background-color: #f5f5f5;
+    color: #bbb;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.settings-item.disabled .menu-label {
+    color: #bbb;
+}
 
 
 
+/* =============================================================== */
+/* --- NUEVO DISEÑO DEL MENÚ DE AJUSTES (TARJETAS) --- */
+/* =============================================================== */
+/* =============================================================== */
+/* --- DISEÑO FINAL PANTALLA DE AJUSTES --- */
+/* =============================================================== */
+
+/* 1. La pantalla completa de "Ajustes" */
+#settings-view {
+    display: flex;
+    flex-direction: column; /* Apila: cabecera, contenido, pie de página */
+    min-height: 100vh;      /* Ocupa, como mínimo, toda la altura de la pantalla */
+	
+}
+
+/* 2. El contenedor principal del contenido (la parte entre la cabecera y el pie de página del logo) */
+#settings-view > main {
+    display: flex;
+    flex-direction: column; /* Apila la cuadrícula de tarjetas y el enlace "Información" */
+    flex-grow: 1;           /* ¡CLAVE! Hace que esta sección se estire y ocupe todo el espacio sobrante */
+    padding: 20px;
+}
+
+/* 3. La cuadrícula de tarjetas */
+.settings-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* (El estilo para cada tarjeta .settings-item, .menu-icon, etc., que ya funciona, lo dejamos como está) */
 
 
+/* 4. El contenedor del enlace "Información" */
+.info-footer {
+    margin-top: auto;      /* ¡CLAVE! Empuja este bloque al fondo del espacio que ha creado 'flex-grow' */
+    padding: 8px;
+	
+    border-top: 1px solid #eee; /* La línea de separación */
+}
 
+/* El item "Información" para que se vea como texto simple */
+.info-footer .settings-item {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    flex-direction: row;
+    justify-content: center;
+    padding: 0;
+    transition: none;
+}
+.info-footer .settings-item:hover {
+    transform: none;
+    background-color: transparent;
+}
 
+/* Reducimos el tamaño del icono y texto de "Información" */
+.info-footer .menu-icon {
+    font-size: 1em;
+}
+.info-footer .menu-label {
+    font-size: 1em;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* =============================================================== */
+/* --- NUEVO DISEÑO DEL MENÚ DE AJUSTES (TARJETAS) --- */
+/* =============================================================== */
 
 
 
