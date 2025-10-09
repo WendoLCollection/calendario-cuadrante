@@ -302,22 +302,7 @@ body {
      font-size: 1.0em;
 }
 
-/* Contenedor de los botones de acción */
-.shift-actions {
-    display: flex; /* Botones en fila */
-    gap: 10px; /* Espacio entre botones */
-    padding-right: 15px;
-}
-.action-button {
-    background-color: #f0f2f5;
-    border: 1px solid #ddd;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-.action-button.delete {
-    color: #e63946; /* Color rojo para el botón de eliminar */
-}
+
 
 /* --- Botón flotante de Añadir (+) --- */
 .fab-container {
@@ -390,21 +375,7 @@ body {
     width: auto; /* La casilla no ocupa el 100% */
 }
 
-/* Botón de Guardar */
-.form-actions {
-    margin-top: 10px;
-}
-.button-primary {
-    width: 100%;
-    padding: 15px;
-    background-color: #4a90e2; /* Azul */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1.1em;
-    font-weight: bold;
-    cursor: pointer;
-}
+
 
 
 
@@ -413,6 +384,8 @@ body {
     padding: 20px;
     background-color: #f7f7f7;
     border-bottom: 1px solid #e0e0e0;
+	display: flex;       
+    justify-content: center;
 }
 
 /* Estilo para el mensaje de lista vacía */
@@ -542,11 +515,7 @@ body {
 	text-align: center;
 }
 
-.quadrant-actions {
-    display: flex;
-    gap: 10px;
-	
-}
+
 
 /* Hacemos que la caja de información del cuadrante activo ocupe todo el ancho */
 .quadrant-item.active .quadrant-info {
@@ -610,11 +579,6 @@ body {
     margin-top: -5px; /* Sube un poco los botones para que queden más cerca */
 }
 
-/* Aumentar el tamaño de los botones del cuadrante activo
-.active-quadrant-buttons .action-button {
-    padding: 8px 16px; /* Aumentamos el espacio interior 
-    font-size: 1em;    /* Hacemos la letra un poco más grande 
-}*/
 
 
 /* =============================================================== */
@@ -639,21 +603,29 @@ body {
     color: #2a9d8f;
     font-size: 0.9em;
 }
-.rate-actions {
-    display: flex;
-    gap: 10px;
-}
+
 
 /* Estilos para la fila en modo edición */
 .rate-item-edit {
     background-color: #eaf4ff;
     border-radius: 8px;
+    padding: 20px 15px;
+    /* --- Propiedades Modificadas --- */
+    flex-direction: column; /* Apila los elementos en vertical (inputs arriba, botones abajo) */
+    align-items: center;    /* Centra los grupos horizontalmente */
+    gap: 20px;              /* Espacio entre la fila de inputs y la de botones */
 }
+
+/* Contenedor de las cajas de texto (nombre y precio) */
 .rate-content-edit {
     display: flex;
-    flex-grow: 1;
+    justify-content: center; /* Centra las cajas de texto */
+    width: 100%;
     gap: 10px;
 }
+
+
+
 .inline-input {
     padding: 8px;
     border: 1px solid #ccc;
@@ -874,15 +846,6 @@ body {
     white-space: pre-wrap; /* Respeta saltos de línea y espacios */
 }
 
-.modal-footer {
-    display: flex;
-    justify-content: flex-end; /* Alinea los botones a la derecha */
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-}
-
 
 
 /* Estilo para la cabecera de la modal en un día de cierre */
@@ -936,10 +899,6 @@ body {
 }
 
 
-/* Hacer que todos los botones del pie de la modal tengan el mismo ancho */
-.modal-footer button {
-    flex: 1; /* Esta propiedad hace que se repartan el espacio a partes iguales */
-}
 
 
 /* --- Estilos para el Menú de Ajustes (con el item "Información" abajo) --- */
@@ -1257,6 +1216,159 @@ input:checked + .slider:before {
     margin-top: 15px;
     font-size: 0.9em;
 }
+
+
+
+
+
+
+
+
+
+
+/* =============================================================== */
+/* --- NUEVO SISTEMA DE DISEÑO DE BOTONES --- */
+/* =============================================================== */
+
+/* Estilo base para TODOS los botones */
+.button-primary,
+.action-button {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.95em;
+    font-weight: bold;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+}
+
+/* --- Botón Primario (acciones principales) --- */
+.button-primary {
+    background-color: #4a90e2; /* Azul principal */
+    color: white;
+}
+
+.button-primary:hover {
+    background-color: #357ABD; /* Azul un poco más oscuro */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* --- Botón Secundario (acciones normales) --- */
+.action-button {
+    background-color: transparent;
+    color: #4a90e2; /* Texto azul */
+    border-color: #4a90e2; /* Borde azul */
+}
+
+.action-button:hover {
+    background-color: #eaf4ff; /* Fondo azul muy claro */
+    transform: translateY(-2px);
+}
+
+/* --- Botón de Peligro (eliminar, restablecer) --- */
+.action-button.delete,
+.action-button.reset {
+    color: #e63946; /* Rojo */
+    border-color: #e63946; /* Borde rojo */
+}
+
+.action-button.delete:hover,
+.action-button.reset:hover {
+    background-color: #fff1f2; /* Fondo rojo muy claro */
+    color: #c62828; /* Rojo más oscuro al pasar el ratón */
+}
+
+/* =============================================================== */
+/* --- NUEVO SISTEMA DE DISEÑO DE BOTONES --- */
+/* =============================================================== */
+
+
+
+
+
+/* =============================================================== */
+/* --- CENTRADO GLOBAL DE BOTONES --- */
+/* =============================================================== */
+
+/* Regla general para todos los contenedores de botones de acción */
+.modal-footer,
+.shift-actions,
+.quadrant-actions,
+.rate-actions,
+.form-actions,
+.active-quadrant-buttons {
+    display: flex;
+    justify-content: center; /* ¡La propiedad clave para centrar! */
+    width: 100%;             /* Asegura que el contenedor ocupe todo el ancho */
+    gap: 15px;               /* Un espaciado consistente entre botones */
+}
+
+/* Ajuste para los botones de los formularios (ej: "Guardar Turno") */
+/* Quitamos el ancho del 100% para que puedan centrarse */
+.form-actions .button-primary {
+    width: auto;
+    min-width: 180px; /* Les damos un ancho mínimo para que no se vean pequeños */
+}
+
+
+/* =============================================================== */
+/* --- CENTRADO GLOBAL DE BOTONES --- */
+/* =============================================================== */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
