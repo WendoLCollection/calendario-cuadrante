@@ -282,8 +282,8 @@ function createDayCell(date, isOtherMonth) {
 
     // Si la fecha de la celda que estamos dibujando es la misma que la de hoy...
     if (date.getTime() === today.getTime()) {
-        // ...le añadimos la clase 'today', que le pone el círculo azul.
-        dayNumber.classList.add('today');
+    dayNumber.classList.add('today'); // Aplica el estilo al NÚMERO
+    dayCell.classList.add('today-cell');   // Aplica el estilo a la CASILLA
     }
 
     

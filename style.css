@@ -151,8 +151,12 @@ body {
     background-color: #4a90e2; /* Azul principal de la app */
     color: white !important;   /* Texto en blanco */
     width: 100%;                /* Ancho del círculo */
-    font-size: 1.3em;
-   
+    font-size: 1.3em; 
+}
+
+/* Borde azul para destacar la casilla del día actual */
+.day-cell.today-cell {
+    border: 3px solid #4a90e2;
 }
 
 
@@ -695,8 +699,10 @@ body {
 /* --- Estilo para el CALENDARIO --- */
 /* Esta es la clase que añadirá el borde verde a la celda */
 .day-cell.shift-closure-day {
-    border: 3px solid #00bb2d ; /* Un borde verde oscuro */
-    padding: 0; /* Ajuste para que el borde no encoja la celda */
+    /*border: 3px solid #00bb2d ; /* Un borde verde oscuro */
+    /*padding: 0; /* Ajuste para que el borde no encoja la celda */
+	 background-color: #e9f5db !important;
+	
 }
 
 
@@ -1221,7 +1227,7 @@ input:checked + .slider:before {
 
 
 
-
+ 
 
 
 
