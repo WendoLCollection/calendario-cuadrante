@@ -1324,7 +1324,12 @@ input:checked + .slider:before {
 /* =============================================================== */
 
 
-
+/* Espaciado superior para el pie de página de la ventana modal */
+.modal-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
 
 
 
