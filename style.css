@@ -1,3 +1,14 @@
+
+    /* Estilo para el aviso permanente en la pantalla de login */
+    .permanent-warning {
+        display: block !important; /* Asegura que siempre sea visible */
+        margin-bottom: 25px;      /* Añade un buen espacio de separación */
+    }
+
+
+
+
+
 /* El '*' selecciona TODO y le quita márgenes que ponen los navegadores por defecto */
 * {
     box-sizing: border-box;
@@ -150,19 +161,20 @@ body {
 .day-number.today {
     background-color: #4a90e2; /* Azul principal de la app */
     color: white !important;   /* Texto en blanco */
-    width: 100%;                /* Ancho del círculo */
     font-size: 1.3em; 
 }
 
 /* Borde azul para destacar la casilla del día actual */
 .day-cell.today-cell {
-    border: 3px solid #4a90e2;
+    border: 2px solid #4a90e2;
+	
 }
 
 
 /* Clase especial para el texto de los domingos */
 .sunday-text {
     color: #e51a4c; /* Un tono de rojo moderno */
+	
 }
 
 
@@ -730,6 +742,54 @@ body {
 
 
 
+
+/* --- Estilos para el Desglose de Ganancias --- */
+
+#earnings-breakdown-container {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #ddd; /* Línea discontinua para separar */
+	align-items: center;
+}
+
+#earnings-breakdown-container h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: #555;
+    text-align: center;
+}
+
+#earnings-breakdown-list {
+    font-size: 0.85em;
+    max-height: 150px; /* Altura máxima con barra de scroll si hay muchos días */
+    overflow-y: auto;  /* Activa la barra de scroll vertical si es necesario */
+    padding-right: 5px; /* Espacio para la barra de scroll */
+	align-items: center;
+}
+
+/* Estilo para cada fila del desglose */
+.breakdown-item {
+    
+    align-items: center; /* Centra los elementos verticalmente */
+    padding: 5px 0;
+    gap: 10px; /* Espacio entre la fecha y el origen */
+}
+
+.breakdown-date {
+    font-weight: bold;
+    color: #333;
+}
+
+.breakdown-source {
+    color: #666;
+}
+
+.breakdown-amount {
+   
+    font-weight: bold;
+    color: #2a9d8f;
+    padding-left: 10px; /* Pequeño espacio para que no se pegue */
+}
 
 
 /* ============================================================================================================================== */
@@ -1386,7 +1446,7 @@ input:checked + .slider:before {
 /* 4. El contenedor del enlace "Información" */
 .info-footer {
     margin-top: auto;      /* ¡CLAVE! Empuja este bloque al fondo del espacio que ha creado 'flex-grow' */
-    padding: 8px;
+     padding: 0 0px 0px 0px; /* Espaciado */
 	
     border-top: 1px solid #eee; /* La línea de separación */
 }
@@ -1399,7 +1459,8 @@ input:checked + .slider:before {
     flex-direction: row;
     justify-content: center;
     padding: 0;
-    transition: none;
+    transition: none; 
+	padding: 15px;
 }
 .info-footer .settings-item:hover {
     transform: none;
@@ -1414,24 +1475,134 @@ input:checked + .slider:before {
     font-size: 1em;
 }
 
+/* Añadir una línea separadora entre los botones inferiores de Ajustes */
+.info-footer .settings-item.disabled {
+    border-top: 2px solid #e0e0e0; /* Un color de línea gris claro */
+}
+
+/* Estilo específico para el botón de Cerrar Sesión */
+#logout-menu-button {
+	border-top: 2px solid #e0e0e0; 
+	padding: 15px;
+}
+
+#logout-menu-button:hover {
+    background-color: #ffced3; /* Un poco más oscuro al pasar el ratón */
+    border-color: #ffb1b8;
+}
+
+
+
 /* =============================================================== */
 /* --- NUEVO DISEÑO DEL MENÚ DE AJUSTES (TARJETAS) --- */
 /* =============================================================== */
 
+/* Estilo para el enlace de "olvidé mi contraseña" */
+.forgot-password {
+    margin: 10px 0 !important; /* Ajustamos el espacio */
+    font-size: 0.8em !important;
+}
 
 
 
+/* =============================================================== */
+/* --- Estilos para la Pantalla de Autenticación --- */
+/* =============================================================== */
 
 
+#auth-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+}
+
+/* La nueva tarjeta que contiene todo (cabecera + formulario) */
+.auth-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden; /* Importante para que la cabecera respete los bordes redondeados */
+	
+}
+
+/* El contenedor del formulario ahora solo necesita el espaciado interior */
+.auth-container {
+    padding: 30px;
+
+}
+
+/* Centrar el contenido de los formularios de login y registro */
+#login-form, #register-form {
+    text-align: center;	
+}
+
+/* Añadir espacio superior a los botones de los formularios de login/registro */
+.auth-container .button-primary {
+    margin-top: 20px;
+	 padding: 10px 100px;
+}
+
+/* Centrar los títulos de los formularios de login y registro */
+.auth-container h2 {
+    text-align: center;
+}
+.auth-switch {
+    font-size: 0.9em;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.auth-switch a {
+    color: #4a90e2;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.error-message {
+    color: #e63946;
+    background-color: #ffddd2;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    text-align: center;
+    margin-bottom: 15px;
+}
 
 
+/* Estilo específico para el botón de cerrar sesión */
+#logout-button {
+    font-size: 0.8em; /* Letra más pequeña */
+    font-weight: normal;
+    color: #e0e0e0; /* Un color más suave */
+    padding: 0;
+    text-decoration: underline; /* Lo subrayamos para que parezca un enlace */
+    border: none;
+	text-align: center;
+}
+
+/* Estilo específico para el botón de texto "Iniciar Sesión" en la cabecera */
+#show-auth-view-button {
+    font-size: 1,5em; /* Devolvemos el tamaño de letra a la normalidad */
+    font-weight: 500; /* Le damos un grosor medio */
+    padding: 0px 0px; /* Le damos un poco de espacio interior */
+    border: 0px solid white;
+    border-radius: 6px;
+}
+
+/* Quitar el margen por defecto del título en la cabecera */
+#header-title-container h1 {
+    margin: 0;
+    font-size: 1.2em; /* Mantenemos el tamaño original del título */
+}
 
 
-
-
-
-
-
+/* =============================================================== */
+/* --- Estilos para la Pantalla de Autenticación --- */
+/* =============================================================== */
 
 
 

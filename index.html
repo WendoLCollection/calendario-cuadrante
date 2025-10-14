@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,10 +14,96 @@
 
 <body>
 
+<!-- *************** LOGIN  *************************-->
+
+<div id="auth-view" class="hidden">
+  <div class="auth-card">
+    <header class="view-header">
+        <button id="back-to-app-from-auth-button" class="header-button">←</button>
+        <h1 class="header-title">Volver al Calendario</h1>
+		
+		
+		
+		
+    </header>
+	
+    <div class="auth-container">
+	
+	
+<!-- *************** LOGIN  *************************--><!-- *************** LOGIN  *************************-->	
+	        <p class="error-message permanent-warning">
+            <strong>Aviso:</strong> El guardado en la nube aún no está activado. Las cuentas se pueden crear, pero los datos se guardarán <strong>solo en este dispositivo</strong>.
+        </p>
+<!-- *************** LOGIN  *************************--><!-- *************** LOGIN  *************************-->
+
+	
+        <div id="login-form">
+            <h2>Iniciar Sesión</h2>
+				<div class="form-group">
+					<label for="login-name">Nombre de Usuario</label>
+					<input type="text" id="login-name" required>
+				</div>
+			
+            <div class="form-group">
+                <label for="login-password">Contraseña</label>
+                <input type="password" id="login-password" required>
+            </div>
+			
+			<div class="form-group-checkbox" style="justify-content: center;">
+				<input type="checkbox" id="remember-me-checkbox">
+				<label for="remember-me-checkbox">Recordarme</label>
+			</div>
+			
+            <p id="login-error" class="error-message hidden"></p>
+		<!--	<button id="login-button" class="button-primary">Entrar</button>   -->	
+            <p class="auth-switch">¿No tienes cuenta? <a href="#" id="show-register">Regístrate</a></p>
+			<p class="auth-switch forgot-password"><a href="#" id="forgot-password-link">¿Has olvidado tu contraseña?</a></p>
+			
+			
+        </div>
+
+        <div id="register-form" class="hidden">
+            <h2>Crear Cuenta</h2>
+			
+			    <div class="form-group">
+					<label for="register-name">Nombre de Usuario</label>
+					<input type="text" id="register-name" required>
+				</div>
+			
+            <div class="form-group">
+                <label for="register-email">Correo Electrónico</label>
+                <input type="email" id="register-email" required>
+            </div>
+			
+            <div class="form-group">
+                <label for="register-password">Contraseña</label>
+                <input type="password" id="register-password" required>
+            </div>
+			
+             <p id="register-error" class="error-message hidden"></p>
+            <button id="register-button" class="button-primary">Registrarse</button>
+            <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="show-login">Inicia sesión</a></p>
+        </div>
+		
+    </div>
+	
+  </div>
+</div>
+
+<!-- *************** LOGIN  *************************-->
+
+
+
+
+
+
+
+
+
     <div id="app-container">
         
         <header id="app-header">
-            <h1 class="header-title">📅Turno de ... </h1>
+            <div id="header-title-container"> </div>
             <button id="settings-button" class="header-button">Ajustes</button>
         </header>
 
@@ -51,42 +138,50 @@
 						</header>
 					
 						
-<main id="settings-content">
-    <ul class="settings-menu">
-        <li class="settings-item">
-            <div class="menu-icon">🎨</div>
-            <div class="menu-label">Turnos</div>
-        </li>
-        <li class="settings-item">
-            <div class="menu-icon">🔄</div>
-            <div class="menu-label">Cuadrante</div>
-        </li>
-        <li class="settings-item">
-            <div class="menu-icon">🌴</div>
-            <div class="menu-label">Vacaciones</div>
-        </li>
-        <li class="settings-item">
-            <div class="menu-icon">✅</div>
-            <div class="menu-label">Dia de cierre</div>
-        </li>
-        <li class="settings-item">
-            <div class="menu-icon">💶</div>
-            <div class="menu-label">Horas Extras</div>
-        </li>
-        <li class="settings-item">
-            <div class="menu-icon">📊</div>
-            <div class="menu-label">Estadísticas</div>
-        </li>
-        </ul>
+								<main id="settings-content">
+									<ul class="settings-menu">
+										<li class="settings-item">
+											<div class="menu-icon">🎨</div>
+											<div class="menu-label">Turnos</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">🔄</div>
+											<div class="menu-label">Cuadrante</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">🌴</div>
+											<div class="menu-label">Vacaciones</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">✅</div>
+											<div class="menu-label">Dia de cierre</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">💶</div>
+											<div class="menu-label">Horas Extras</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">📊</div>
+											<div class="menu-label">Estadísticas</div>
+										</li>
+										</ul>
 
 
-</main>
+								</main>
 
 							    <div class="info-footer">
+								
+									<div id="logout-menu-button" class="settings-item">
+										<div class="menu-icon">⛔​</div>
+										<div class="menu-label">Cerrar Sesión</div>
+									</div>
+													
+									
 									<div class="settings-item disabled">
 											<div class="menu-icon">ℹ️</div>
 											<div class="menu-label">Información</div>
 									</div>
+																		
 								</div>						
 						
 						
@@ -391,29 +486,6 @@
 <!-- *************** Estadísticas   *************************-->
 
 
-<!-- *************** Login   *************************
-
-<div id="login-view">
-    <div class="login-container">
-        <h1>📅 Calendario de Turnos</h1>
-        <div class="form-group">
-            <label for="login-email">Correo Electrónico</label>
-            <input type="email" id="login-email" placeholder="tu@email.com">
-        </div>
-        <div class="form-group">
-            <label for="login-password">Contraseña</label>
-            <input type="password" id="login-password" placeholder="••••••••">
-        </div>
-        <div class="login-actions">
-            <button id="login-button" class="button-primary">Iniciar Sesión</button>
-            <button id="register-button" class="action-button">Registrarse</button>
-        </div>
-        <p id="login-error-message" class="error-message hidden"></p>
-    </div>
-</div>
-
-
- *************** Login   *************************-->
 
 
 
@@ -449,19 +521,27 @@
             </div>
         </div>
 
-        <div id="modal-closure-summary" class="modal-section hidden">
-            <h3>Resumen del Cierre</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span>Días trabajados:</span>
-                    <span id="modal-worked-days">--</span>
-                </div>
-                <div class="info-item">
-                    <span>Ganancias totales:</span>
-                    <span id="modal-total-earnings">--</span>
-                </div>
-            </div>
-        </div>
+		<div id="modal-closure-summary" class="modal-section hidden">
+			<h3>Resumen del Periodo de Cierre</h3>
+			
+			<div class="info-grid">
+				<div class="info-item">
+					<span>Dietas:</span>
+					<span id="modal-worked-days">--</span>
+				</div>
+				<div class="info-item">
+					<span>Ganancias:</span>
+					<span id="modal-total-earnings">--</span>
+				</div>
+			</div>
+
+			<div id="earnings-breakdown-container">
+				<h4>Desglose de Ganancias:</h4>
+				<ul id="earnings-breakdown-list">
+					</ul>
+			</div>
+		</div>
+
         <div class="modal-section">
             <h3>Comentarios</h3>
             <p id="modal-shift-comments-display" class="comment-block shift-comment"></p>
@@ -561,33 +641,13 @@
 
 
 
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 
 
 
-
-
-
-
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-<script>
-  // Tu configuración de Firebase (esto no cambia)
-  const firebaseConfig = {
-    apiKey: "AIzaSyBuQfyrG9oYI86NBz02Qh1zEI3FhqSkD-k",
-    authDomain: "calendario-turnos-f35fb.firebaseapp.com",
-    projectId: "calendario-turnos-f35fb",
-    storageBucket: "calendario-turnos-f35fb.appspot.com",
-    messagingSenderId: "48212009705",
-    appId: "1:48212009705:web:945a9eb280ebdd8eb54678"
-  };
-
-  // Inicializar Firebase
-  firebase.initializeApp(firebaseConfig);
-</script>
 
 
 

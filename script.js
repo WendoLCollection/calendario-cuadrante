@@ -1,3 +1,26 @@
+'use strict';
+
+// ===============================================================
+// --- INICIALIZACIÓN DE FIREBASE ---
+// ===============================================================
+
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBV-BVAIhoEkkhTGBzMNQGJXrFOemSdVnk",
+    authDomain: "calendario-turnos-70a86.firebaseapp.com",
+    projectId: "calendario-turnos-70a86",
+    storageBucket: "calendario-turnos-70a86.firebasestorage.app",
+    messagingSenderId: "995512515343",
+    appId: "1:995512515343:web:5f370ebf7ec6931ce41c7a"
+};
+
+// Inicializamos la aplicación de Firebase
+const app = firebase.initializeApp(firebaseConfig);
+// Conectamos con los servicios que vamos a usar
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 1. SELECCIÓN DE ELEMENTOS DEL HTML ---
 // ********************************************************************************************************************************************************************************************************************************************
@@ -66,17 +89,32 @@ const summaryResultsContainer = document.getElementById('summary-results-contain
 const welcomeTutorial = document.getElementById('welcome-tutorial');
 const closeTutorialButton = document.getElementById('close-tutorial-button');
 
+const headerTitleContainer = document.getElementById('header-title-container');
+const authView = document.getElementById('auth-view');
+const appContainer = document.getElementById('app-container');
+const backToAppFromAuthButton = document.getElementById('back-to-app-from-auth-button');
 
+// Elementos de la pantalla de Autenticación
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const showRegisterLink = document.getElementById('show-register');
+const showLoginLink = document.getElementById('show-login');
 
+// Elementos de los formularios de Autenticación
+const loginEmailInput = document.getElementById('login-email');
+const loginPasswordInput = document.getElementById('login-password');
+const loginButton = document.getElementById('login-button');
+const loginError = document.getElementById('login-error');
 
+const registerNameInput = document.getElementById('register-name');
+const registerEmailInput = document.getElementById('register-email');
+const registerPasswordInput = document.getElementById('register-password');
+const registerButton = document.getElementById('register-button');
+const registerError = document.getElementById('register-error');
 
-
-
-
-
-
-
-
+const logoutMenuButton = document.getElementById('logout-menu-button');
+const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
+const forgotPasswordLink = document.getElementById('forgot-password-link');
 
 
 
@@ -792,30 +830,31 @@ function calculateTotalHours(startTime, endTime) {
 }
 
 /**
- * Calcula las ganancias totales de un día, sumando las del turno y las horas extras.
+ * Calcula las ganancias para un día, permitiendo especificar qué parte calcular.
  * @param {object} turn - El objeto del turno del día.
  * @param {Date} date - La fecha del día que se está calculando.
- * @returns {string} - Las ganancias totales formateadas, ej: "120.50€".
+ * @param {boolean} turnOnly - Si es true, solo calcula las ganancias del turno principal.
+ * @param {boolean} extrasOnly - Si es true, solo calcula las ganancias de las horas extra.
+ * @returns {string} - Las ganancias calculadas, formateadas.
  */
-function calculateEarnings(turn, date) {
+function calculateEarnings(turn, date, turnOnly = false, extrasOnly = false) {
     let totalEarnings = 0;
+    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dayNote = dayNotes[dateKey];
 
-    // 1. Calcula las ganancias del turno principal (si aplica)
-    if (turn && turn.isPaid && turn.overtimeRateId) {
+    // 1. Calcula ganancias del turno principal
+    if (!extrasOnly && turn && turn.isPaid && turn.overtimeRateId) {
         const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
         if (rate) {
-            const hoursStr = calculateTotalHours(turn.startTime, turn.endTime);
-            const hours = parseFloat(hoursStr);
+            const hours = parseFloat(calculateTotalHours(turn.startTime, turn.endTime));
             if (!isNaN(hours)) {
                 totalEarnings += hours * rate.price;
             }
         }
     }
 
-    // 2. Busca y suma las ganancias de las horas extras guardadas para ese día
-    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const dayNote = dayNotes[dateKey];
-    if (dayNote && dayNote.extraHours) {
+    // 2. Suma ganancias de las horas extras
+    if (!turnOnly && dayNote && dayNote.extraHours) {
         const rate = overtimeRates.find(r => r.id === Number(dayNote.extraHours.rateId));
         if (rate) {
             totalEarnings += dayNote.extraHours.hours * rate.price;
@@ -858,7 +897,7 @@ monthDisplay.addEventListener('click', () => {
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 5. LLAMADA INICIAL ---
 // ********************************************************************************************************************************************************************************************************************************************
-
+/*
 loadShifts();
 loadQuadrants();
 loadOvertimeRates();
@@ -874,6 +913,117 @@ renderCalendar();
 
 
 checkAndShowTutorial(); 
+
+renderGuestHeader();
+*/
+
+
+
+
+/**
+ * Función de ayuda para cargar todos los datos desde localStorage.
+ * Agrupa todas las funciones 'load' en una sola llamada.
+ */
+function loadAllDataFromLocalStorage() {
+    loadShifts();
+    loadQuadrants();
+    loadOvertimeRates();
+    loadVacations();
+    loadShiftClosures();
+    loadDayNotes();
+}
+
+/**
+ * Función de ayuda para redibujar todas las listas de los ajustes.
+ * Agrupa varias funciones 'render' en una sola llamada.
+ */
+function renderAllLists() {
+    // Estas funciones dibujan el contenido de las pantallas de ajustes.
+    renderShiftsList();
+    renderQuadrantsList();
+    renderVacationsList();
+    renderShiftClosureView();
+    renderOvertimeList();
+    renderColorSelector();
+}
+
+
+// ===============================================================
+// --- ARRANQUE DE LA APLICACIÓN Y GESTIÓN DE SESIÓN ---
+// ===============================================================
+/**
+ * Esta es la función principal que se ejecuta al cargar la página.
+ * Actúa como un "portero": comprueba el estado de la sesión y decide qué mostrar.
+ */
+auth.onAuthStateChanged((user) => {
+    headerTitleContainer.innerHTML = '';
+    
+    if (user) {
+        // --- CASO 1: El usuario HA INICIADO SESIÓN ---
+        headerTitleContainer.innerHTML = `<h1 class="header-title">📅 Turnos de ${user.displayName}</h1>`;
+
+        // Mostramos el contenedor principal de la app.
+        appContainer.classList.remove('hidden');
+        authView.classList.add('hidden');
+
+        // --- AÑADIDO ---
+        // Forzamos la vista para que muestre el calendario.
+        settingsView.classList.add('hidden');
+        calendarView.classList.remove('hidden');
+        appHeader.classList.remove('hidden');
+        // --- FIN AÑADIDO ---
+
+        console.log("Usuario conectado. Cargando datos...");
+        // TODO: Cargar datos de Firebase. De momento, usamos localStorage.
+        loadAllDataFromLocalStorage();
+		
+		 // Hacemos visible el botón de cerrar sesión.
+		logoutMenuButton.classList.remove('hidden');
+        
+    } else {
+        // --- CASO 2: El usuario NO HA INICIADO SESIÓN (Modo Invitado) ---
+		
+		 prefillUsername();
+        
+        headerTitleContainer.innerHTML = `<button id="show-auth-view-button" class="header-button">Iniciar Sesión</button>`;
+        
+        document.getElementById('show-auth-view-button').addEventListener('click', () => {
+            appContainer.classList.add('hidden');
+            authView.classList.remove('hidden');
+
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        });
+
+        // Mostramos el contenedor principal de la app.
+        appContainer.classList.remove('hidden');
+        authView.classList.add('hidden');
+
+        // --- AÑADIDO ---
+        // Forzamos la vista para que muestre el calendario.
+        settingsView.classList.add('hidden');
+        calendarView.classList.remove('hidden');
+        appHeader.classList.remove('hidden');
+        // --- FIN AÑADIDO ---
+        
+        console.log("Modo invitado. Cargando datos desde localStorage...");
+        loadAllDataFromLocalStorage();
+		
+		// Ocultamos el botón de cerrar sesión.
+		logoutMenuButton.classList.add('hidden'); 
+		
+    }
+
+    // Al final, siempre redibujamos el calendario y las listas.
+    renderCalendar();
+    renderAllLists();
+    checkAndShowTutorial();
+});
+
+
+// ===============================================================
+// --- ARRANQUE DE LA APLICACIÓN Y GESTIÓN DE SESIÓN ---  FIN
+// ===============================================================
 
 
 // ********************************************************************************************************************************************************************************************************************************************
@@ -1903,21 +2053,49 @@ if (dayNote.dailyComment) {
     if (!isNaN(earningsValue) && earningsValue > 0) {
         modalHeader.classList.add('earnings-day');
     }
-    if (isShiftClosureDay(date)) {
-        modalHeader.classList.add('closure-day');
-        const prevClosureDate = getPreviousClosureDate(date);
-        if (prevClosureDate) {
-            const periodStartDate = new Date(prevClosureDate);
-            periodStartDate.setDate(periodStartDate.getDate() + 1);
-            const summary = calculatePeriodSummary(periodStartDate, date);
-            document.getElementById('modal-worked-days').textContent = summary.workedDays;
-            document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
-        } else {
-            document.getElementById('modal-worked-days').textContent = 'N/A';
-            document.getElementById('modal-total-earnings').textContent = 'N/A';
-        }
-        modalClosureSummary.classList.remove('hidden');
-    }
+	if (isShiftClosureDay(date)) {
+		modalHeader.classList.add('closure-day');
+		const prevClosureDate = getPreviousClosureDate(date);
+
+		if (prevClosureDate) {
+			const periodStartDate = new Date(prevClosureDate);
+			periodStartDate.setDate(periodStartDate.getDate() + 1);
+
+			// 1. Obtenemos el resumen completo, que ahora incluye el desglose.
+			const summary = calculatePeriodSummary(periodStartDate, date);
+			
+			// 2. Rellenamos los totales como antes.
+			document.getElementById('modal-worked-days').textContent = summary.workedDays;
+			document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
+
+			// --- NUEVO: "Pintamos" la lista de desglose ---
+			const breakdownList = document.getElementById('earnings-breakdown-list');
+			breakdownList.innerHTML = ''; // Limpiamos la lista.
+
+			if (summary.earningsBreakdown.length > 0) {
+				summary.earningsBreakdown.forEach(item => {
+					const formattedDate = item.date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+					const listItem = document.createElement('li');
+					listItem.classList.add('breakdown-item');
+					listItem.innerHTML = `
+						<span class="breakdown-date">${formattedDate}</span>
+						<span class="breakdown-source">${item.source}</span>
+						<span class="breakdown-amount">+${item.amount.toFixed(2)}€</span>
+					`;
+					breakdownList.appendChild(listItem);
+				});
+			} else {
+				breakdownList.innerHTML = '<li>No se registraron ganancias en este periodo.</li>';
+			}
+
+		} else {
+			document.getElementById('modal-worked-days').textContent = 'N/A';
+			document.getElementById('modal-total-earnings').textContent = 'N/A';
+			document.getElementById('earnings-breakdown-list').innerHTML = '<li>No se encontró un cierre anterior.</li>';
+		}
+		
+		modalClosureSummary.classList.remove('hidden');
+	}
     
     switchToViewMode();
     dayModal.classList.remove('hidden');
@@ -2200,14 +2378,13 @@ function getPreviousClosureDate(currentClosureDate) {
 }
 
 /**
- * Calcula los días trabajados y las ganancias totales en un rango de fechas.
- * @param {Date} startDate - Fecha de inicio del periodo.
- * @param {Date} endDate - Fecha de fin del periodo.
- * @returns {object} - Un objeto con los totales.
+ * Calcula los días trabajados, las ganancias totales y un desglose detallado
+ * de cada ingreso en un rango de fechas.
  */
 function calculatePeriodSummary(startDate, endDate) {
     let workedDays = 0;
     let totalEarnings = 0;
+    const earningsBreakdown = [];
     let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
@@ -2216,15 +2393,52 @@ function calculatePeriodSummary(startDate, endDate) {
         
         if (turn && turn.name !== 'Descanso' && !onVacation) {
             workedDays++;
-            const earnings = parseFloat(calculateEarnings(turn, currentDate));
-            if (!isNaN(earnings)) {
-                totalEarnings += earnings;
+
+            // --- LÓGICA MODIFICADA PARA EL DESGLOSE ---
+
+            // 1. Ganancias del turno principal (si se paga por horas)
+            if (turn.isPaid && turn.overtimeRateId) {
+                const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
+                if (rate) {
+                    const hours = parseFloat(calculateTotalHours(turn.startTime, turn.endTime));
+                    if (!isNaN(hours)) {
+                        const amount = hours * rate.price;
+                        if (amount > 0) {
+                            totalEarnings += amount;
+                            earningsBreakdown.push({
+                                date: new Date(currentDate),
+                                // Nuevo formato del texto: "Mañana (Tarifa Festivo)"
+                                source: `${turn.name} (${rate.name})`,
+                                amount: amount
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 2. Ganancias de las horas extras del día
+            const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            const dayNote = dayNotes[dateKey];
+            if (dayNote && dayNote.extraHours) {
+                const rate = overtimeRates.find(r => r.id === Number(dayNote.extraHours.rateId));
+                if (rate) {
+                    const amount = dayNote.extraHours.hours * rate.price;
+                    if (amount > 0) {
+                        totalEarnings += amount;
+                        earningsBreakdown.push({
+                            date: new Date(currentDate),
+                            // Nuevo formato del texto: "Horas Extra (Tarifa Nocturna)"
+                            source: `Horas Extra (${rate.name})`,
+                            amount: amount
+                        });
+                    }
+                }
             }
         }
         
         currentDate.setDate(currentDate.getDate() + 1);
     }
-    return { workedDays, totalEarnings };
+    return { workedDays, totalEarnings, earningsBreakdown };
 }
 
 
@@ -2444,6 +2658,223 @@ closeTutorialButton.addEventListener('click', () => {
 
 
 
+// ===============================================================
+// --- LÓGICA DE AUTENTICACIÓN ---
+// ===============================================================
+
+//Dibuja la cabecera para un usuario "invitado".
+
+
+/**
+ * Rellena el campo de nombre de usuario si hay uno guardado.
+ * Si no hay ninguno, se asegura de que tanto el usuario como la contraseña estén vacíos.
+ */
+function prefillUsername() {
+    // Buscamos el nombre de usuario guardado.
+    const rememberedUsername = localStorage.getItem('rememberedUsername');
+    // Seleccionamos los campos de texto del formulario.
+    const loginNameInput = document.getElementById('login-name');
+    const loginPasswordInput = document.getElementById('login-password');
+
+    if (rememberedUsername) {
+        // Si encontramos un nombre, lo ponemos en el campo.
+        // Dejamos que el navegador rellene la contraseña si quiere.
+        loginNameInput.value = rememberedUsername;
+    } else {
+        // Si NO encontramos nada, nos aseguramos de que AMBOS campos estén vacíos.
+        loginNameInput.value = '';
+        loginPasswordInput.value = ''; // <-- ESTA LÍNEA ES LA CLAVE
+    }
+}
+
+function renderGuestHeader() {
+    // Creamos el botón de "Iniciar Sesión".
+    headerTitleContainer.innerHTML = `<button id="show-auth-view-button" class="header-button">Iniciar Sesión</button>`;
+
+    // Le añadimos la funcionalidad al botón que acabamos de crear.
+	document.getElementById('show-auth-view-button').addEventListener('click', () => {
+		// Ocultamos la app principal y mostramos la pantalla de login.
+		appContainer.classList.add('hidden');
+		authView.classList.remove('hidden');
+
+		// --- AÑADIDO ---
+		// Nos aseguramos de que siempre se muestre el formulario de login por defecto.
+		loginForm.classList.remove('hidden');
+		registerForm.classList.add('hidden');
+	});
+}
+
+// Evento para el nuevo botón de volver desde la pantalla de login al calendario
+backToAppFromAuthButton.addEventListener('click', () => {
+    authView.classList.add('hidden');
+    appContainer.classList.remove('hidden');
+});
+
+
+
+// --- Lógica para cambiar entre formularios de Login y Registro ---
+
+// Cuando se pulsa en "Regístrate"
+showRegisterLink.addEventListener('click', (event) => {
+    event.preventDefault(); // Evita que la página se recargue
+    loginForm.classList.add('hidden');
+    registerForm.classList.remove('hidden');
+});
+
+// Cuando se pulsa en "Inicia sesión"
+showLoginLink.addEventListener('click', (event) => {
+    event.preventDefault(); // Evita que la página se recargue
+    registerForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+});
+
+
+// --- Lógica del botón de Registro (VERSIÓN CON COMPROBACIÓN DE USUARIO) ---
+registerButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    registerError.classList.add('hidden');
+
+    const name = registerNameInput.value.trim();
+    const email = registerEmailInput.value;
+    const password = registerPasswordInput.value;
+
+    if (!name || !email || !password) {
+        registerError.textContent = 'Por favor, rellena todos los campos.';
+        registerError.classList.remove('hidden');
+        return;
+    }
+    
+    // --- NUEVA COMPROBACIÓN ---
+    // 1. Primero, buscamos si el nombre de usuario ya existe en la base de datos.
+    db.collection('users').where('displayName', '==', name).get()
+        .then((querySnapshot) => {
+            // 2. Si la búsqueda encuentra algún resultado, el nombre ya está en uso.
+            if (!querySnapshot.empty) {
+                registerError.textContent = 'Ese nombre de usuario ya está en uso. Por favor, elige otro.';
+                registerError.classList.remove('hidden');
+            } else {
+                // 3. Si está libre, procedemos a crear el usuario en Firebase Authentication.
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+
+                        // 4. Actualizamos el perfil del usuario con su nombre.
+                        user.updateProfile({
+                            displayName: name
+                        }).then(() => {
+                            // 5. Creamos su documento en la base de datos Firestore.
+                            db.collection('users').doc(user.uid).set({
+                                displayName: name,
+                                email: user.email,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            // El "portero" (onAuthStateChanged) se encargará del resto.
+                        });
+                    })
+                    .catch((error) => {
+                        // Gestionamos errores de Firebase (email ya en uso, contraseña débil, etc.)
+                        switch (error.code) {
+                            case 'auth/email-already-in-use':
+                                registerError.textContent = 'Este correo electrónico ya está registrado.';
+                                break;
+                            case 'auth/weak-password':
+                                registerError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+                                break;
+                            default:
+                                registerError.textContent = 'Ha ocurrido un error al registrar la cuenta.';
+                        }
+                        registerError.classList.remove('hidden');
+                    });
+            }
+        });
+});
+
+
+
+// --- Lógica del botón de Iniciar Sesión (con "Recordarme") ---
+loginButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    loginError.classList.add('hidden');
+
+    // Leemos el estado de la casilla "Recordarme".
+    const rememberMe = rememberMeCheckbox.checked;
+    
+    // Decidimos qué tipo de sesión usar.
+    const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+    
+    // Le decimos a Firebase qué tipo de sesión queremos.
+    auth.setPersistence(persistence)
+        .then(() => {
+            const name = document.getElementById('login-name').value.trim();
+            const password = loginPasswordInput.value;
+
+            if (!name || !password) {
+                loginError.textContent = 'Por favor, introduce tu nombre de usuario y contraseña.';
+                loginError.classList.remove('hidden');
+                return;
+            }
+
+            // Si el usuario quiere ser recordado, guardamos su nombre de usuario.
+            if (rememberMe) {
+                localStorage.setItem('rememberedUsername', name);
+            } else {
+                localStorage.removeItem('rememberedUsername');
+            }
+
+            // ... (el resto de tu código para buscar el email e iniciar sesión sigue aquí sin cambios) ...
+            db.collection('users').where('displayName', '==', name).get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        loginError.textContent = 'El nombre de usuario no existe.';
+                        loginError.classList.remove('hidden');
+                        return;
+                    }
+                    const userData = querySnapshot.docs[0].data();
+                    auth.signInWithEmailAndPassword(userData.email, password)
+                        .catch((error) => {
+                            loginError.textContent = 'La contraseña es incorrecta.';
+                            loginError.classList.remove('hidden');
+                        });
+                });
+        });
+});
+
+
+// --- Lógica para el botón de Cerrar Sesión en el menú ---
+logoutMenuButton.addEventListener('click', () => {
+    if (confirm('¿Estás seguro de que quieres cerrar la sesión?')) {
+        // Borramos el nombre de usuario guardado de la memoria local.
+        //localStorage.removeItem('rememberedUsername'); // <-- AÑADE ESTA LÍNEA
+
+        // Cerramos la sesión en Firebase.
+        auth.signOut();
+    }
+});
+
+
+
+// --- Lógica para el enlace de "He olvidado mi contraseña" ---
+forgotPasswordLink.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    // 1. Pedimos al usuario su correo electrónico.
+    const email = prompt('Por favor, introduce tu correo electrónico para restablecer la contraseña:');
+
+    // 2. Si el usuario introduce un correo...
+    if (email) {
+        // 3. ...le pedimos a Firebase que envíe el correo de recuperación.
+        auth.sendPasswordResetEmail(email)
+            .then(() => {
+                // Si todo va bien, informamos al usuario.
+                alert('Se ha enviado un correo a tu dirección. Revisa tu bandeja de entrada para restablecer la contraseña.');
+            })
+            .catch((error) => {
+                // Si hay un error (ej: el correo no existe), también informamos.
+                alert('No se pudo enviar el correo. Asegúrate de que la dirección es correcta y está registrada.');
+                console.error("Error al enviar correo de recuperación:", error);
+            });
+    }
+});
 
 
 
