@@ -30,11 +30,6 @@
     <div class="auth-container">
 	
 	
-<!-- *************** LOGIN  *************************--><!-- *************** LOGIN  *************************-->	
-	        <p class="error-message permanent-warning">
-            <strong>Aviso:</strong> El guardado en la nube aún no está activado. Las cuentas se pueden crear, pero los datos se guardarán <strong>solo en este dispositivo</strong>.
-        </p>
-<!-- *************** LOGIN  *************************--><!-- *************** LOGIN  *************************-->
 
 	
         <div id="login-form">
@@ -55,7 +50,7 @@
 			</div>
 			
             <p id="login-error" class="error-message hidden"></p>
-		<button id="login-button" class="button-primary">Entrar</button>   
+		<button id="login-button" class="button-primary">Entrar</button> 
             <p class="auth-switch">¿No tienes cuenta? <a href="#" id="show-register">Regístrate</a></p>
 			<p class="auth-switch forgot-password"><a href="#" id="forgot-password-link">¿Has olvidado tu contraseña?</a></p>
 			
@@ -240,17 +235,17 @@
             <div class="form-group-inline">
                 <div class="form-group">
                     <label for="shift-start-time">Hora de inicio</label>
-                    <input type="time" id="shift-start-time">
+                    <input type="time" id="shift-start-time" required>
                 </div>
                 <div class="form-group">
                     <label for="shift-end-time">Hora de fin</label>
-                    <input type="time" id="shift-end-time">
+                    <input type="time" id="shift-end-time" required>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>Color</label>
-                <div id="color-selector">
+                <div id="color-selector" required>
                     </div>
             </div>
 
@@ -268,8 +263,7 @@
                 <div class="form-group">
                     <label for="shift-hourly-rate">Tarifa de hora extra</label>
                     <select id="shift-hourly-rate">
-                        <option>Tarifa A (Ejemplo)</option>
-                        <option>Tarifa B (Ejemplo)</option>
+
                     </select>
                 </div>
             </div>
@@ -615,23 +609,72 @@
 
 <div id="welcome-tutorial" class="modal-backdrop hidden">
     <div class="tutorial-content">
-        <h2>¡Bienvenido/a al Calendario de Turnos!</h2>
-        <p>
-            Para empezar a ver tu cuadrante en el calendario, solo necesitas seguir dos sencillos pasos:
-        </p>
-        <ol class="tutorial-steps">
-            <li><span>1</span> Ve a <strong>Configuración > 🎨 Turnos</strong> y crea los diferentes tipos de turno que tienes (ej: Mañana, Tarde, Noche).</li>
-			
-            <li><span>2</span> Luego, ve a <strong>Configuración > 🔄 Cuadrante</strong> y define tu patrón de rotación semanal.</li>
-        </ol>
-        <p>
-            Una vez hecho, ¡el calendario se rellenará automáticamente!
-        </p>
+        <h2 id="tutorial-title"></h2>
+        <div id="tutorial-body">
+            </div>
         <button id="close-tutorial-button" class="button-primary">Entendido</button>
     </div>
 </div>
 
 <!-- *************** tutorial *************************-->
+
+
+
+<!-- *************** AVISO *************************
+
+<div id="data-conflict-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2>⚠️⚠️ Atención: Datos en dos lugares ⚠️⚠️</h2>
+        </header>
+        <main class="modal-body">
+            <p>
+                Hemos encontrado datos en tu cuenta de la nube y también en este dispositivo.
+            </p>
+            <p>
+                Por favor, elige con qué datos quieres quedarte.
+            </p>
+            
+            <div class="conflict-options">
+                <button id="use-cloud-data-button" class="button-primary">
+                    Usar los datos de la Nube
+                    <small>(Recomendado) Se borrarán los datos de este dispositivo.</small>
+                </button>
+                <button id="use-local-data-button" class="button-secondary">
+                    Usar los datos de este Dispositivo
+                    <small>Se borrarán los datos de la nube y se subirán los de aquí.</small>
+                </button>
+            </div>
+			
+			<p class="conflict-note">
+				💡 Si prefieres no decidir ahora y seguir usando los datos de este dispositivo en modo invitado,
+				puedes <a href="#" id="conflict-logout-link">cerrar la sesión desde aquí</a>.
+			</p>
+
+        </main>
+    </div>
+</div>
+
+*************** AVISO *************************-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -644,15 +687,6 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-
-
-
-
-
-
-
-
 
 </div> <script src="script.js"></script>
 <script>
@@ -667,4 +701,3 @@
 
 </body>
 </html>
-

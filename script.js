@@ -20,6 +20,20 @@ const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// --- ACTIVAR LA PERSISTENCIA OFFLINE ---
+// Esta orden le dice a Firebase que guarde una copia local de los datos de la nube.
+db.enablePersistence()
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            // Esto suele pasar si tienes la app abierta en varias pestañas. No es un error grave.
+            console.warn("La persistencia de Firebase falló, posiblemente por tener múltiples pestañas abiertas.");
+        } else if (err.code == 'unimplemented') {
+            // El navegador no es compatible (muy raro en navegadores modernos).
+            console.warn("Este navegador no soporta el modo offline.");
+        }
+    });
+// --- FIN DE LA ACTIVACIÓN ---
+
 
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 1. SELECCIÓN DE ELEMENTOS DEL HTML ---
@@ -141,6 +155,13 @@ const SHIFT_COLORS = [
 
 
 
+// (Aquí están todas tus otras declaraciones de 'const'...)
+
+// --- LÍNEA DE CORRECCIÓN ---
+// Movemos la modal de conflicto al final del body para asegurar que siempre esté en el nivel superior.
+//document.body.appendChild(dataConflictModal);
+
+
 
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 2. ESTADO DE LA APLICACIÓN ---
@@ -182,6 +203,7 @@ let dayNotes = {}; // Guardará { 'YYYY-MM-DD': { nota, nuevoTurnoId } }
 let summaryYear = new Date().getFullYear(); // Para saber qué año estamos viendo en las estadísticas
 let summaryMode = 'fullMonth'; // Para saber el modo de cálculo: 'fullMonth' o 'closureToClosure'
 
+let unsubscribeFromDataChanges = null; // Guardará la función para "apagar" el oyente
 
 
 
@@ -519,63 +541,218 @@ function populateQuadrantForm(weekCount) {
 
 // --- FUNCIONES PARA GUARDAR Y CARGAR EN localStorage ---
 
+/**
+ * Guarda la lista de turnos.
+ * Si el usuario ha iniciado sesión, la guarda en la nube (Firestore).
+ * Si no, la guarda en la memoria local (localStorage).
+ */
 function saveShifts() {
-    // Convertimos la lista de turnos a texto y la guardamos en localStorage
-    localStorage.setItem('calendarAppData', JSON.stringify(shifts));
-	
-	    // Comprobamos si ya se puede marcar el tutorial como completado
-    if (shifts.length > 0 && quadrants.length > 0) {
-        localStorage.setItem('calendarTutorialCompleted', 'true');
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Guardar en la Nube ---
+        
+        // 2. Apuntamos a la base de datos, a un documento que pertenece a este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir otros datos (cuadrantes, etc.)
+            shifts: shifts 
+        }, { merge: true })
+        .catch((error) => {
+            console.error("Error al guardar los turnos en la nube:", error);
+            alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
+        });
+
+    } else {
+        // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
+        localStorage.setItem('calendarAppData_shifts', JSON.stringify(shifts));
     }
 }
 
 
-function loadShifts() {
-    // Leemos los datos guardados desde localStorage
-    const savedData = localStorage.getItem('calendarAppData');
+/**
+ * Carga la lista de turnos.
+ * Si el usuario ha iniciado sesión, la carga desde la nube (Firestore).
+ * Si no, la carga desde la memoria local (localStorage).
+ * Devuelve una Promesa para que sepamos cuándo ha terminado de cargar.
+ */
+async function loadShifts() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
 
-    // Si hay datos guardados...
-    if (savedData) {
-        // ...los convertimos de texto a nuestra lista de turnos
-        shifts = JSON.parse(savedData);
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        try {
+            // 2. Apuntamos al documento único de este usuario.
+            const doc = await db.collection('userData').doc(user.uid).get();
+
+            if (doc.exists && doc.data().shifts) {
+                // 3. Si el documento existe y tiene datos de turnos, los cargamos.
+                shifts = doc.data().shifts;
+            } else {
+                // Si no hay nada en la nube, empezamos con una lista vacía.
+                shifts = [];
+            }
+        } catch (error) {
+            console.error("Error al cargar los turnos desde la nube:", error);
+            shifts = []; // En caso de error, usamos una lista vacía para evitar fallos.
+        }
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        
+        // 4. Si no hay usuario, usamos el método de siempre.
+        const data = localStorage.getItem('calendarAppData_shifts');
+        if (data) {
+            shifts = JSON.parse(data);
+        } else {
+            shifts = [];
+        }
     }
-    // Si no hay nada, la lista 'shifts' seguirá siendo el array vacío que definimos al principio.
 }
 
+
+/**
+ * Guarda la lista de cuadrantes.
+ * Si el usuario ha iniciado sesión, la guarda en la nube (Firestore).
+ * Si no, la guarda en la memoria local (localStorage).
+ */
 function saveQuadrants() {
-    localStorage.setItem('calendarAppData_quadrants', JSON.stringify(quadrants));
-	
-	    // Comprobamos si ya se puede marcar el tutorial como completado
-    if (shifts.length > 0 && quadrants.length > 0) {
-        localStorage.setItem('calendarTutorialCompleted', 'true');
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Guardar en la Nube ---
+        
+        // 2. Apuntamos al documento único de este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir los turnos que ya guardamos.
+            quadrants: quadrants 
+        }, { merge: true })
+        .catch((error) => {
+            console.error("Error al guardar los cuadrantes en la nube:", error);
+            alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
+        });
+
+    } else {
+        // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
+        localStorage.setItem('calendarAppData_quadrants', JSON.stringify(quadrants));
     }
 }
 
-function loadQuadrants() {
-    const savedData = localStorage.getItem('calendarAppData_quadrants');
-    if (savedData) {
-        quadrants = JSON.parse(savedData);
+
+/**
+ * Carga la lista de cuadrantes.
+ * Si el usuario ha iniciado sesión, la carga desde la nube (Firestore).
+ * Si no, la carga desde la memoria local (localStorage).
+ */
+async function loadQuadrants() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        try {
+            // 2. Apuntamos al documento único de este usuario.
+            const doc = await db.collection('userData').doc(user.uid).get();
+
+            if (doc.exists && doc.data().quadrants) {
+                // 3. Si el documento existe y tiene datos de cuadrantes, los cargamos.
+                quadrants = doc.data().quadrants;
+            } else {
+                // Si no hay nada en la nube, empezamos con una lista vacía.
+                quadrants = [];
+            }
+        } catch (error) {
+            console.error("Error al cargar los cuadrantes desde la nube:", error);
+            quadrants = []; // En caso de error, usamos una lista vacía.
+        }
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        
+        // 4. Si no hay usuario, usamos el método de siempre.
+        const data = localStorage.getItem('calendarAppData_quadrants');
+        if (data) {
+            quadrants = JSON.parse(data);
+        } else {
+            quadrants = [];
+        }
     }
 }
 
 // --- FUNCIONES PARA GUARDAR Y CARGAR LAS NOTAS/EXCEPCIONES DIARIAS ---
 
 /**
- * Guarda el objeto 'dayNotes' en el localStorage del navegador.
- * Primero lo convierte a un formato de texto (JSON) para poder guardarlo.
+ * Guarda las notas y modificaciones diarias.
+ * Si el usuario ha iniciado sesión, las guarda en la nube (Firestore).
+ * Si no, las guarda en la memoria local (localStorage).
  */
 function saveDayNotes() {
-    localStorage.setItem('calendarAppData_dayNotes', JSON.stringify(dayNotes));
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Guardar en la Nube ---
+        
+        // 2. Apuntamos al documento único de este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir los otros datos.
+            dayNotes: dayNotes 
+        }, { merge: true })
+        .catch((error) => {
+            console.error("Error al guardar las notas diarias en la nube:", error);
+            alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
+        });
+
+    } else {
+        // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
+        localStorage.setItem('calendarAppData_dayNotes', JSON.stringify(dayNotes));
+    }
 }
 
+
+
 /**
- * Carga las notas guardadas desde el localStorage cuando se inicia la aplicación.
- * Si encuentra datos, los convierte de texto de vuelta a un objeto JavaScript.
+ * Carga las notas y modificaciones diarias.
+ * Si el usuario ha iniciado sesión, las carga desde la nube (Firestore).
+ * Si no, las carga desde la memoria local (localStorage).
  */
-function loadDayNotes() {
-    const savedData = localStorage.getItem('calendarAppData_dayNotes');
-    if (savedData) {
-        dayNotes = JSON.parse(savedData);
+async function loadDayNotes() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        try {
+            // 2. Apuntamos al documento único de este usuario.
+            const doc = await db.collection('userData').doc(user.uid).get();
+
+            if (doc.exists && doc.data().dayNotes) {
+                // 3. Si el documento existe y tiene datos de notas, los cargamos.
+                dayNotes = doc.data().dayNotes;
+            } else {
+                // Si no hay nada en la nube, empezamos con un objeto vacío.
+                dayNotes = {};
+            }
+        } catch (error) {
+            console.error("Error al cargar las notas diarias desde la nube:", error);
+            dayNotes = {}; // En caso de error, usamos un objeto vacío.
+        }
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        
+        // 4. Si no hay usuario, usamos el método de siempre.
+        const data = localStorage.getItem('calendarAppData_dayNotes');
+        if (data) {
+            dayNotes = JSON.parse(data);
+        } else {
+            dayNotes = {};
+        }
     }
 }
 
@@ -897,6 +1074,44 @@ monthDisplay.addEventListener('click', () => {
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 5. LLAMADA INICIAL ---
 // ********************************************************************************************************************************************************************************************************************************************
+
+/**
+ * Carga TODOS los datos de la aplicación.
+ * Decide si cargarlos desde la nube (si hay usuario) o desde local.
+ * Devuelve una Promesa que se completa cuando todos los datos han sido cargados.
+ */
+async function loadAllData() {
+    // Obtenemos el usuario actual.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        console.log("Usuario conectado. Cargando datos desde la nube...");
+        // Usamos Promise.all para ejecutar todas las cargas en paralelo y esperar a que terminen.
+        await Promise.all([
+            loadShifts(),
+            loadQuadrants(),
+            loadVacations(),
+            loadOvertimeRates(),
+            loadShiftClosures(),
+            loadDayNotes()
+        ]);
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        console.log("Modo invitado. Cargando datos desde localStorage...");
+        // Estas funciones son rápidas porque leen del disco, no de internet.
+        loadShifts();
+        loadQuadrants();
+        loadVacations();
+        loadOvertimeRates();
+        loadShiftClosures();
+        loadDayNotes();
+    }
+}
+
+
+
+
 /*
 loadShifts();
 loadQuadrants();
@@ -904,26 +1119,17 @@ loadOvertimeRates();
 loadVacations();
 loadShiftClosures();
 loadDayNotes();
-
-
 renderShiftsList();
 renderQuadrantsList();
 renderColorSelector();
 renderCalendar();
-
-
 checkAndShowTutorial(); 
-
 renderGuestHeader();
-*/
-
-
-
 
 /**
  * Función de ayuda para cargar todos los datos desde localStorage.
  * Agrupa todas las funciones 'load' en una sola llamada.
- */
+
 function loadAllDataFromLocalStorage() {
     loadShifts();
     loadQuadrants();
@@ -933,7 +1139,7 @@ function loadAllDataFromLocalStorage() {
     loadDayNotes();
 }
 
-/**
+
  * Función de ayuda para redibujar todas las listas de los ajustes.
  * Agrupa varias funciones 'render' en una sola llamada.
  */
@@ -948,76 +1154,97 @@ function renderAllLists() {
 }
 
 
-// ===============================================================
-// --- ARRANQUE DE LA APLICACIÓN Y GESTIÓN DE SESIÓN ---
-// ===============================================================
 /**
- * Esta es la función principal que se ejecuta al cargar la página.
- * Actúa como un "portero": comprueba el estado de la sesión y decide qué mostrar.
+ * Se suscribe a los cambios en los datos del usuario en la nube en tiempo real.
+ * Cada vez que algo cambia en la base de datos, este código se ejecuta automáticamente.
+ * @param {string} userId - El ID del usuario al que nos vamos a suscribir.
  */
-auth.onAuthStateChanged((user) => {
-    headerTitleContainer.innerHTML = '';
+function subscribeToDataChanges(userId) {
+    // Apuntamos al documento único que contiene todos los datos de este usuario.
+    const userDocRef = db.collection('userData').doc(userId);
+
+    // .onSnapshot() es la orden para "escuchar en tiempo real".
+    // Guardamos la función que devuelve en nuestra variable "interruptor".
+    unsubscribeFromDataChanges = userDocRef.onSnapshot(
+        (doc) => {
+            // --- ESTE CÓDIGO SE EJECUTA CADA VEZ QUE HAY UN CAMBIO ---
+            console.log("¡Datos de la nube actualizados!");
+
+            if (doc.exists) {
+                const data = doc.data();
+                // Rellenamos nuestras variables de memoria con los datos actualizados.
+                shifts = data.shifts || [];
+                quadrants = data.quadrants || [];
+                vacations = data.vacations || [];
+                overtimeRates = data.overtimeRates || [];
+                shiftClosures = data.shiftClosures || {};
+                dayNotes = data.dayNotes || {};
+            } else {
+                // Si el documento se borra, reseteamos los datos.
+                shifts = []; quadrants = []; vacations = []; overtimeRates = []; shiftClosures = {}; dayNotes = {};
+            }
+            
+            // Después de actualizar la memoria, volvemos a dibujar todo en la pantalla.
+            renderAllLists();
+            renderCalendar();
+        },
+        (error) => {
+            console.error("Error al escuchar los cambios de la nube:", error);
+            alert("Se ha perdido la conexión con los datos en tiempo real.");
+        }
+    );
+}
+
+
+
+// ===============================================================
+// --- ARRANQUE DE LA APLICACIÓN (NUEVA VERSIÓN SIN CONFLICTOS) ---
+// ===============================================================
+auth.onAuthStateChanged(async (user) => {
     
+    // Al cambiar de usuario, si había un "oyente" activo, lo apagamos.
+    if (unsubscribeFromDataChanges) {
+        unsubscribeFromDataChanges();
+        unsubscribeFromDataChanges = null;
+    }
+
     if (user) {
         // --- CASO 1: El usuario HA INICIADO SESIÓN ---
         headerTitleContainer.innerHTML = `<h1 class="header-title">📅 Turnos de ${user.displayName}</h1>`;
+        logoutMenuButton.classList.remove('hidden');
 
-        // Mostramos el contenedor principal de la app.
+        // Activamos el "oyente" en tiempo real para este usuario.
+        subscribeToDataChanges(user.uid);
+        
+        // Mostramos la aplicación.
         appContainer.classList.remove('hidden');
         authView.classList.add('hidden');
-
-        // --- AÑADIDO ---
-        // Forzamos la vista para que muestre el calendario.
-        settingsView.classList.add('hidden');
         calendarView.classList.remove('hidden');
         appHeader.classList.remove('hidden');
-        // --- FIN AÑADIDO ---
-
-        console.log("Usuario conectado. Cargando datos...");
-        // TODO: Cargar datos de Firebase. De momento, usamos localStorage.
-        loadAllDataFromLocalStorage();
-		
-		 // Hacemos visible el botón de cerrar sesión.
-		logoutMenuButton.classList.remove('hidden');
         
     } else {
-        // --- CASO 2: El usuario NO HA INICIADO SESIÓN (Modo Invitado) ---
-		
-		 prefillUsername();
-        
-        headerTitleContainer.innerHTML = `<button id="show-auth-view-button" class="header-button">Iniciar Sesión</button>`;
-        
-        document.getElementById('show-auth-view-button').addEventListener('click', () => {
+    // --- CASO 2: El usuario NO HA INICIADO SESIÓN (Modo Invitado) ---
+
+    logoutMenuButton.classList.add('hidden');
+    headerTitleContainer.innerHTML = `<button id="show-auth-view-button" class="header-button">Iniciar Sesión</button>`;
+
+    // Conectamos el evento justo después de haber creado el botón.
+    const showAuthButton = document.getElementById('show-auth-view-button');
+    if (showAuthButton) {
+        showAuthButton.addEventListener('click', () => {
             appContainer.classList.add('hidden');
             authView.classList.remove('hidden');
-
             loginForm.classList.remove('hidden');
             registerForm.classList.add('hidden');
         });
-
-        // Mostramos el contenedor principal de la app.
-        appContainer.classList.remove('hidden');
-        authView.classList.add('hidden');
-
-        // --- AÑADIDO ---
-        // Forzamos la vista para que muestre el calendario.
-        settingsView.classList.add('hidden');
-        calendarView.classList.remove('hidden');
-        appHeader.classList.remove('hidden');
-        // --- FIN AÑADIDO ---
-        
-        console.log("Modo invitado. Cargando datos desde localStorage...");
-        loadAllDataFromLocalStorage();
-		
-		// Ocultamos el botón de cerrar sesión.
-		logoutMenuButton.classList.add('hidden'); 
-		
     }
-
-    // Al final, siempre redibujamos el calendario y las listas.
-    renderCalendar();
-    renderAllLists();
-    checkAndShowTutorial();
+        
+        await loadAllData();
+        
+        renderAllLists();
+        renderCalendar();
+        checkAndShowTutorial();
+    }
 });
 
 
@@ -1066,17 +1293,49 @@ backToSettingsButton.addEventListener('click', () => {
     settingsView.classList.remove('hidden');  // Muestra el menú de ajustes
 });
 
-// Evento para el botón flotante (+) para ir al formulario de añadir turno
+/**
+ * Gestiona el clic en el botón "+ Añadir nuevo turno".
+ * Limpia el formulario y lo prepara para crear un turno desde cero.
+ */
 addNewShiftButton.addEventListener('click', () => {
-	populateOvertimeSelector('shift-hourly-rate');
-    shiftsListView.classList.add('hidden');   // Oculta la lista de turnos
-    shiftFormView.classList.remove('hidden'); // Muestra el formulario
+    // 1. Limpiamos todos los campos del formulario (nombre, horas, etc.).
+    shiftForm.reset();
+
+    // 2. Nos aseguramos de que el campo oculto del ID esté vacío.
+    // Esto es crucial para que el botón "Guardar" sepa que estamos creando, no editando.
+    document.getElementById('shift-id-input').value = '';
+
+    // 3. Restauramos el título original del formulario.
+    document.getElementById('shift-form-title').textContent = 'Añadir Turno';
+
+    // 4. Quitamos la selección de cualquier color que pudiera estar marcado.
+    const allDots = colorSelector.querySelectorAll('.color-dot');
+    allDots.forEach(dot => dot.classList.remove('selected'));
+
+    // 5. Nos aseguramos de que la sección de pago por horas esté oculta.
+    hourlyRateContainer.classList.add('hidden');
+
+    // 6. Finalmente, mostramos la pantalla del formulario, ahora limpia.
+    shiftsListView.classList.add('hidden');
+    shiftFormView.classList.remove('hidden');
 });
 
-// Evento para el botón de volver (←) desde el formulario hacia la lista de turnos
+/**
+ * Gestiona el clic en el botón de volver (←) desde el formulario de turnos.
+ * Limpia el formulario y vuelve a la lista.
+ */
 cancelShiftFormButton.addEventListener('click', () => {
-    shiftFormView.classList.add('hidden');    // Oculta el formulario
-    shiftsListView.classList.remove('hidden');// Muestra la lista de turnos
+    // 1. Reseteamos el formulario para limpiar cualquier dato no guardado.
+    shiftForm.reset();
+    document.getElementById('shift-id-input').value = '';
+    document.getElementById('shift-form-title').textContent = 'Añadir Turno';
+    const allDots = colorSelector.querySelectorAll('.color-dot');
+    allDots.forEach(dot => dot.classList.remove('selected'));
+    hourlyRateContainer.classList.add('hidden');
+
+    // 2. Navegamos de vuelta a la lista de turnos.
+    shiftFormView.classList.add('hidden');
+    shiftsListView.classList.remove('hidden');
 });
 
 
@@ -1470,15 +1729,73 @@ const addNewOvertimeButton = document.getElementById('add-new-overtime-button');
 const overtimeListContainer = document.getElementById('overtime-list-container');
 
 // --- Funciones de guardado y carga ---
-// (Asegúrate de que 'let overtimeRates = [];' está al principio del archivo en la sección 2)
+/**
+ * Guarda la lista de tarifas de horas extras.
+ * Si el usuario ha iniciado sesión, la guarda en la nube (Firestore).
+ * Si no, la guarda en la memoria local (localStorage).
+ */
 function saveOvertimeRates() {
-    localStorage.setItem('calendarAppData_overtime', JSON.stringify(overtimeRates));
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Guardar en la Nube ---
+        
+        // 2. Apuntamos al documento único de este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir los otros datos.
+            overtimeRates: overtimeRates 
+        }, { merge: true })
+        .catch((error) => {
+            console.error("Error al guardar las horas extras en la nube:", error);
+            alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
+        });
+
+    } else {
+        // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
+        localStorage.setItem('calendarAppData_overtime', JSON.stringify(overtimeRates));
+    }
 }
 
-function loadOvertimeRates() {
-    const savedData = localStorage.getItem('calendarAppData_overtime');
-    if (savedData) {
-        overtimeRates = JSON.parse(savedData);
+
+/**
+ * Carga la lista de tarifas de horas extras.
+ * Si el usuario ha iniciado sesión, la carga desde la nube (Firestore).
+ * Si no, la carga desde la memoria local (localStorage).
+ */
+async function loadOvertimeRates() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        try {
+            // 2. Apuntamos al documento único de este usuario.
+            const doc = await db.collection('userData').doc(user.uid).get();
+
+            if (doc.exists && doc.data().overtimeRates) {
+                // 3. Si el documento existe y tiene datos de horas extras, los cargamos.
+                overtimeRates = doc.data().overtimeRates;
+            } else {
+                // Si no hay nada en la nube, empezamos con una lista vacía.
+                overtimeRates = [];
+            }
+        } catch (error) {
+            console.error("Error al cargar las horas extras desde la nube:", error);
+            overtimeRates = []; // En caso de error, usamos una lista vacía.
+        }
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        
+        // 4. Si no hay usuario, usamos el método de siempre.
+        const data = localStorage.getItem('calendarAppData_overtime');
+        if (data) {
+            overtimeRates = JSON.parse(data);
+        } else {
+            overtimeRates = [];
+        }
     }
 }
 
@@ -1674,14 +1991,72 @@ const cancelVacationFormButton = document.getElementById('cancel-vacation-form-b
 
 
 
+/**
+ * Guarda la lista de periodos de vacaciones.
+ * Si el usuario ha iniciado sesión, la guarda en la nube (Firestore).
+ * Si no, la guarda en la memoria local (localStorage).
+ */
 function saveVacations() {
-    localStorage.setItem('calendarAppData_vacations', JSON.stringify(vacations));
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Guardar en la Nube ---
+        
+        // 2. Apuntamos al documento único de este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir los otros datos.
+            vacations: vacations 
+        }, { merge: true })
+        .catch((error) => {
+            console.error("Error al guardar las vacaciones en la nube:", error);
+            alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
+        });
+
+    } else {
+        // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
+        localStorage.setItem('calendarAppData_vacations', JSON.stringify(vacations));
+    }
 }
 
-function loadVacations() {
-    const savedData = localStorage.getItem('calendarAppData_vacations');
-    if (savedData) {
-        vacations = JSON.parse(savedData);
+/**
+ * Carga la lista de periodos de vacaciones.
+ * Si el usuario ha iniciado sesión, la carga desde la nube (Firestore).
+ * Si no, la carga desde la memoria local (localStorage).
+ */
+async function loadVacations() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        try {
+            // 2. Apuntamos al documento único de este usuario.
+            const doc = await db.collection('userData').doc(user.uid).get();
+
+            if (doc.exists && doc.data().vacations) {
+                // 3. Si el documento existe y tiene datos de vacaciones, los cargamos.
+                vacations = doc.data().vacations;
+            } else {
+                // Si no hay nada en la nube, empezamos con una lista vacía.
+                vacations = [];
+            }
+        } catch (error) {
+            console.error("Error al cargar las vacaciones desde la nube:", error);
+            vacations = []; // En caso de error, usamos una lista vacía.
+        }
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        
+        // 4. Si no hay usuario, usamos el método de siempre.
+        const data = localStorage.getItem('calendarAppData_vacations');
+        if (data) {
+            vacations = JSON.parse(data);
+        } else {
+            vacations = [];
+        }
     }
 }
 
@@ -1812,15 +2187,72 @@ const backToSettingsFromClosureButton = document.getElementById('back-to-setting
 const monthlyClosureList = document.getElementById('monthly-closure-list');
 
 
-
+/**
+ * Guarda la configuración de los días de cierre.
+ * Si el usuario ha iniciado sesión, la guarda en la nube (Firestore).
+ * Si no, la guarda en la memoria local (localStorage).
+ */
 function saveShiftClosures() {
-    localStorage.setItem('calendarAppData_closures', JSON.stringify(shiftClosures));
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Guardar en la Nube ---
+        
+        // 2. Apuntamos al documento único de este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir los otros datos.
+            shiftClosures: shiftClosures 
+        }, { merge: true })
+        .catch((error) => {
+            console.error("Error al guardar los cierres de turno en la nube:", error);
+            alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
+        });
+
+    } else {
+        // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
+        localStorage.setItem('calendarAppData_closures', JSON.stringify(shiftClosures));
+    }
 }
 
-function loadShiftClosures() {
-    const savedData = localStorage.getItem('calendarAppData_closures');
-    if (savedData) {
-        shiftClosures = JSON.parse(savedData);
+/**
+ * Carga la configuración de los días de cierre.
+ * Si el usuario ha iniciado sesión, la carga desde la nube (Firestore).
+ * Si no, la carga desde la memoria local (localStorage).
+ */
+async function loadShiftClosures() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+    const user = auth.currentUser;
+
+    if (user) {
+        // --- MODO REGISTRADO: Cargar desde la Nube ---
+        try {
+            // 2. Apuntamos al documento único de este usuario.
+            const doc = await db.collection('userData').doc(user.uid).get();
+
+            if (doc.exists && doc.data().shiftClosures) {
+                // 3. Si el documento existe y tiene datos de cierres, los cargamos.
+                shiftClosures = doc.data().shiftClosures;
+            } else {
+                // Si no hay nada en la nube, empezamos con un objeto vacío.
+                shiftClosures = {};
+            }
+        } catch (error) {
+            console.error("Error al cargar los cierres de turno desde la nube:", error);
+            shiftClosures = {}; // En caso de error, usamos un objeto vacío.
+        }
+    } else {
+        // --- MODO INVITADO: Cargar desde Local ---
+        
+        // 4. Si no hay usuario, usamos el método de siempre.
+        const data = localStorage.getItem('calendarAppData_closures');
+        if (data) {
+            shiftClosures = JSON.parse(data);
+        } else {
+            shiftClosures = {};
+        }
     }
 }
 
@@ -1909,6 +2341,8 @@ function isDayOverridden(date) {
 
 
 
+
+
 // ********************************************************************************************************************************************************************************************************************************************
 // --- SECCIÓN FINAL: LÓGICA PARA GESTOS TÁCTILES (SWIPE) ---
 // ********************************************************************************************************************************************************************************************************************************************
@@ -1948,9 +2382,10 @@ function handleSwipe() {
 
 
 
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- LÓGICA DE LA VENTANA MODAL (CON MODO EDICIÓN) ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
+
 
 // --- Elementos de la modal ---
 const dayModal = document.getElementById('day-modal');
@@ -2512,10 +2947,9 @@ overrideIsPaidCheckbox.addEventListener('change', () => {
 
 
 
-
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- LÓGICA PARA ACTUALIZAR EL DÍA "HOY" AUTOMÁTICAMENTE ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 
 /**
  * Este "oyente" se activa cada vez que la pestaña de la aplicación se vuelve visible.
@@ -2533,9 +2967,10 @@ document.addEventListener('visibilitychange', () => {
 
 
 
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- LÓGICA PARA EL RESUMEN MENSUAL Y ANUAL ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
+
 
 /**
  * Dibuja el resumen de horas mensual y anual, destacando los totales que superan el límite.
@@ -2621,26 +3056,60 @@ summaryModeToggle.addEventListener('change', () => {
 
 
 
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- LÓGICA DEL TUTORIAL DE BIENVENIDA ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
+
 
 /**
- * Comprueba si debe mostrar el tutorial inicial y lo hace si se cumplen las condiciones.
+ * Comprueba si debe mostrar un tutorial y muestra el mensaje adecuado
+ * según si el usuario ha iniciado sesión o está en modo invitado.
  */
 function checkAndShowTutorial() {
-    // 1. Comprobamos si el tutorial ya se ha completado antes.
-    const tutorialCompleted = localStorage.getItem('calendarTutorialCompleted');
+    // 1. Obtenemos el usuario actual para saber en qué modo estamos.
+    const user = auth.currentUser;
     
-    // Si ya se completó, no hacemos nada más.
-    if (tutorialCompleted === 'true') {
-        return;
-    }
+    // Seleccionamos los elementos de la ventana del tutorial.
+    const tutorialTitle = document.getElementById('tutorial-title');
+    const tutorialBody = document.getElementById('tutorial-body');
 
-    // 2. Si no se ha completado, comprobamos si la app está "vacía".
-    if (shifts.length === 0 || quadrants.length === 0) {
-        // Si lo está, mostramos la ventana del tutorial.
+    // --- LÓGICA INVERTIDA Y CORREGIDA ---
+
+    if (!user) {
+        // --- CASO 1: MODO INVITADO ---
+        // Si no hay usuario, SIEMPRE mostramos el aviso sobre el guardado local.
+        tutorialTitle.textContent = 'Estás en Modo Invitado';
+        tutorialBody.innerHTML = `
+        <p>Todo lo que crees se guardará <strong>únicamente en este dispositivo</strong>. Para guardar tus datos en la nube, te recomendamos <strong>crear una cuenta gratis</strong> o iniciar sesión.</p>
+        
+        <hr> 
+
+        <p>Para empezar, solo necesitas seguir dos sencillos pasos:</p>
+        <ol class="tutorial-steps">
+            <li><span>1</span> Ve a <strong>Configuración > 🎨 Turnos</strong> y crea tus turnos.</li>
+            <li><span>2</span> Luego, ve a <strong>Configuración > 🔄 Cuadrante</strong> y define tu rotación.</li>
+        </ol>
+    `;
         welcomeTutorial.classList.remove('hidden');
+
+    } else {
+        // --- CASO 2: MODO REGISTRADO ---
+        // Si hay un usuario, comprobamos si ya ha completado el tutorial.
+        const tutorialCompleted = localStorage.getItem('calendarTutorialCompleted');
+        
+        // Si no lo ha completado y además no tiene datos, le mostramos los primeros pasos.
+        if (tutorialCompleted !== 'true' && (shifts.length === 0 || quadrants.length === 0)) {
+            tutorialTitle.textContent = '¡Bienvenido/a!';
+            tutorialBody.innerHTML = `
+                <p>Para empezar, solo necesitas seguir dos sencillos pasos:</p>
+                <ol class="tutorial-steps">
+                    <li><span>1</span> Ve a <strong>Configuración > 🎨 Turnos</strong> y crea tus turnos.</li>
+                    <li><span>2</span> Luego, ve a <strong>Configuración > 🔄 Cuadrante</strong> y define tu rotación.</li>
+                </ol>
+                <p>Tus datos se guardarán automáticamente en tu cuenta en la nube.</p>
+            `;
+            welcomeTutorial.classList.remove('hidden');
+        }
     }
 }
 
@@ -2658,9 +3127,9 @@ closeTutorialButton.addEventListener('click', () => {
 
 
 
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 // --- LÓGICA DE AUTENTICACIÓN ---
-// ===============================================================
+// ********************************************************************************************************************************************************************************************************************************************
 
 //Dibuja la cabecera para un usuario "invitado".
 
@@ -2765,6 +3234,7 @@ registerButton.addEventListener('click', (event) => {
                             // 5. Creamos su documento en la base de datos Firestore.
                             db.collection('users').doc(user.uid).set({
                                 displayName: name,
+								displayName_lowercase: name.toLowerCase(), 
                                 email: user.email,
                                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
@@ -2822,7 +3292,7 @@ loginButton.addEventListener('click', (event) => {
             }
 
             // ... (el resto de tu código para buscar el email e iniciar sesión sigue aquí sin cambios) ...
-            db.collection('users').where('displayName', '==', name).get()
+             db.collection('users').where('displayName_lowercase', '==', name.toLowerCase()).get()
                 .then((querySnapshot) => {
                     if (querySnapshot.empty) {
                         loginError.textContent = 'El nombre de usuario no existe.';
@@ -2875,15 +3345,6 @@ forgotPasswordLink.addEventListener('click', (event) => {
             });
     }
 });
-
-
-
-
-
-
-
-
-
 
 
 
