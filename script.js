@@ -3347,4 +3347,17 @@ forgotPasswordLink.addEventListener('click', (event) => {
 });
 
 
+/**
+ * Función de ayuda para borrar TODOS los datos de la aplicación del localStorage.
+ */
+function clearAllLocalData() {
+    console.log("Limpiando todos los datos locales...");
+    localStorage.removeItem('calendarAppData_shifts');
+    localStorage.removeItem('calendarAppData_quadrants');
+    localStorage.removeItem('calendarAppData_vacations');
+    localStorage.removeItem('calendarAppData_overtime');
+    localStorage.removeItem('calendarAppData_closures');
+    localStorage.removeItem('calendarAppData_dayNotes');
+}
+
 
