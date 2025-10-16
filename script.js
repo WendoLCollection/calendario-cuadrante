@@ -1222,29 +1222,39 @@ auth.onAuthStateChanged(async (user) => {
         calendarView.classList.remove('hidden');
         appHeader.classList.remove('hidden');
         
-    } else {
-    // --- CASO 2: El usuario NO HA INICIADO SESIÓN (Modo Invitado) ---
+		} else {
+			// --- CASO 2: El usuario NO HA INICIADO SESIÓN (Modo Invitado) ---
+			
+			// 1. Preparamos la cabecera para el invitado.
+			headerTitleContainer.innerHTML = `<button id="show-auth-view-button" class="header-button">Iniciar Sesión</button>`;
+			logoutMenuButton.classList.add('hidden');
+			
+			const showAuthButton = document.getElementById('show-auth-view-button');
+			if (showAuthButton) {
+				showAuthButton.addEventListener('click', () => {
+					appContainer.classList.add('hidden');
+					authView.classList.remove('hidden');
+					loginForm.classList.remove('hidden');
+					registerForm.classList.add('hidden');
+				});
+			}
 
-    logoutMenuButton.classList.add('hidden');
-    headerTitleContainer.innerHTML = `<button id="show-auth-view-button" class="header-button">Iniciar Sesión</button>`;
-
-    // Conectamos el evento justo después de haber creado el botón.
-    const showAuthButton = document.getElementById('show-auth-view-button');
-    if (showAuthButton) {
-        showAuthButton.addEventListener('click', () => {
-            appContainer.classList.add('hidden');
-            authView.classList.remove('hidden');
-            loginForm.classList.remove('hidden');
-            registerForm.classList.add('hidden');
-        });
-    }
-        
-        await loadAllData();
-        
-        renderAllLists();
-        renderCalendar();
-        checkAndShowTutorial();
-    }
+			// 2. Cargamos los datos de localStorage.
+			await loadAllData(); 
+			
+			// 3. MOSTRAMOS LA PANTALLA CORRECTA.
+			appContainer.classList.remove('hidden');
+			authView.classList.add('hidden');
+			
+			// --- LÍNEAS IMPORTANTES ---
+			// Nos aseguramos de ocultar la vista de ajustes y mostrar el calendario.
+			settingsView.classList.add('hidden');
+			calendarView.classList.remove('hidden');
+			appHeader.classList.remove('hidden');
+			
+			prefillUsername();
+			renderCalendar();
+		}
 });
 
 
@@ -3346,18 +3356,5 @@ forgotPasswordLink.addEventListener('click', (event) => {
     }
 });
 
-
-/**
- * Función de ayuda para borrar TODOS los datos de la aplicación del localStorage.
- */
-function clearAllLocalData() {
-    console.log("Limpiando todos los datos locales...");
-    localStorage.removeItem('calendarAppData_shifts');
-    localStorage.removeItem('calendarAppData_quadrants');
-    localStorage.removeItem('calendarAppData_vacations');
-    localStorage.removeItem('calendarAppData_overtime');
-    localStorage.removeItem('calendarAppData_closures');
-    localStorage.removeItem('calendarAppData_dayNotes');
-}
 
 
