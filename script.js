@@ -155,6 +155,44 @@ const SHIFT_COLORS = [
 
 
 
+/**
+ * Lista de festivos nacionales no sustituibles.
+ * Formato: 'MM-DD'
+ */
+const HOLIDAYS = {
+    2025: [
+		'01-01', // Año Nuevo
+        '01-06', // Epifanía del Señor
+        '03-19', // San José (NUEVO)
+        '04-18', // Viernes Santo
+        '04-21', // Lunes de Pascua (NUEVO)
+        '05-01', // Fiesta del Trabajo
+        '08-15', // Asunción de la Virgen
+        '10-09', // Día de la Com. Valenciana (NUEVO)
+        '10-12', // Fiesta Nacional de España
+        '11-01', // Todos los Santos
+        '12-06', // Día de la Constitución
+        '12-08', // Inmaculada Concepción
+        '12-25'  // Natividad del Señor
+		
+		
+    ],
+    2026: [
+        '01-01', // Año Nuevo
+        '01-06', // Epifanía del Señor
+        '04-03', // Viernes Santo
+        '05-01', // Fiesta del Trabajo
+        '08-15', // Asunción de la Virgen
+        '10-12', // Fiesta Nacional de España
+        '11-01', // Todos los Santos (cae en domingo)
+        '12-06', // Día de la Constitución (cae en domingo)
+        '12-08', // Inmaculada Concepción
+        '12-25'  // Natividad del Señor
+    ]
+};
+
+
+
 // (Aquí están todas tus otras declaraciones de 'const'...)
 
 // --- LÍNEA DE CORRECCIÓN ---
@@ -347,9 +385,19 @@ function createDayCell(date, isOtherMonth) {
     }
 
     
+// Lógica para marcar los Domingos en rojo (esta ya la tienes).
     if (date.getDay() === 0) {
         dayNumber.classList.add('sunday-text');
     }
+
+
+    // Lógica para marcar los festivos en rojo.
+    if (isHoliday(date)) {
+        dayNumber.classList.add('sunday-text');
+    }
+   
+	
+	
     
     // 4. --- MONTAJE FINAL ---
     dayCell.appendChild(dayNumber);
@@ -459,6 +507,35 @@ function isDateOnVacation(date) {
         return date >= startDate && date <= endDate;
     });
 }
+
+//*****************************************************************************************************************************************************************************
+//                 festivos                
+
+/**
+ * Comprueba si una fecha es un festivo nacional según nuestra lista.
+ * @param {Date} date - La fecha a comprobar.
+ * @returns {boolean} - True si es un día festivo.
+ */
+function isHoliday(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateKey = `${month}-${day}`;
+
+    // Comprueba si tenemos una lista para ese año y si esa lista incluye la fecha.
+    if (HOLIDAYS[year] && HOLIDAYS[year].includes(dateKey)) {
+        return true;
+    }
+    return false;
+}
+
+
+
+
+
+
+//                 festivos                
+//*****************************************************************************************************************************************************************************
 
 
 
