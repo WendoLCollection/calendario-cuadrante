@@ -1268,7 +1268,7 @@ auth.onAuthStateChanged(async (user) => {
 // ********************************************************************************************************************************************************************************************************************************************
 
 // Evento para cuando se hace clic en el botón de ajustes (rueda ⚙️)
-settingsButton.addEventListener('click', () => {
+ settingsButton.addEventListener('click', () => {
 	appHeader.classList.add('hidden'); 
     // Ocultamos la vista del calendario
     calendarView.classList.add('hidden');
@@ -1283,9 +1283,7 @@ backToCalendarButton.addEventListener('click', () => {
     settingsView.classList.add('hidden');
     // Mostramos la vista del calendario
     calendarView.classList.remove('hidden');
-});
-
-
+}); 
 
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 7. NAVEGACIÓN DE LA SECCIÓN DE TURNOS ---
