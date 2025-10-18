@@ -156,39 +156,36 @@ const SHIFT_COLORS = [
 
 
 /**
- * Lista de festivos nacionales no sustituibles.
- * Formato: 'MM-DD'
+ * Objeto con los festivos. El formato es 'MM-DD': 'Nombre del Festivo'.
  */
 const HOLIDAYS = {
-    2025: [
-		'01-01', // Año Nuevo
-        '01-06', // Epifanía del Señor
-        '03-19', // San José (NUEVO)
-        '04-18', // Viernes Santo
-        '04-21', // Lunes de Pascua (NUEVO)
-        '05-01', // Fiesta del Trabajo
-        '08-15', // Asunción de la Virgen
-        '10-09', // Día de la Com. Valenciana (NUEVO)
-        '10-12', // Fiesta Nacional de España
-        '11-01', // Todos los Santos
-        '12-06', // Día de la Constitución
-        '12-08', // Inmaculada Concepción
-        '12-25'  // Natividad del Señor
-		
-		
-    ],
-    2026: [
-        '01-01', // Año Nuevo
-        '01-06', // Epifanía del Señor
-        '04-03', // Viernes Santo
-        '05-01', // Fiesta del Trabajo
-        '08-15', // Asunción de la Virgen
-        '10-12', // Fiesta Nacional de España
-        '11-01', // Todos los Santos (cae en domingo)
-        '12-06', // Día de la Constitución (cae en domingo)
-        '12-08', // Inmaculada Concepción
-        '12-25'  // Natividad del Señor
-    ]
+    2025: {
+        '01-01': 'Año Nuevo',
+        '01-06': 'Epifanía del Señor',
+        '03-19': 'San José',
+        '04-18': 'Viernes Santo',
+        '04-21': 'Lunes de Pascua',
+        '05-01': 'Fiesta del Trabajo',
+        '08-15': 'Asunción de la Virgen',
+        '10-09': 'Día de la Com. Valenciana',
+        '10-12': 'Fiesta Nacional de España',
+        '11-01': 'Todos los Santos',
+        '12-06': 'Día de la Constitución',
+        '12-08': 'Inmaculada Concepción',
+        '12-25': 'Natividad del Señor'
+    },
+    2026: {
+        '01-01': 'Año Nuevo',
+        '01-06': 'Epifanía del Señor',
+        '04-03': 'Viernes Santo',
+        '05-01': 'Fiesta del Trabajo',
+        '08-15': 'Asunción de la Virgen',
+        '10-12': 'Fiesta Nacional de España',
+        '11-01': 'Todos los Santos',
+        '12-06': 'Día de la Constitución',
+        '12-08': 'Inmaculada Concepción',
+        '12-25': 'Natividad del Señor'
+    }
 };
 
 
@@ -300,12 +297,12 @@ function renderCalendar() {
 
 
 /**
- * Crea y pinta una celda del calendario con 5 secciones (día, icono, turno, inicio, fin).
+ * Crea y pinta una celda del calendario con el nuevo diseño de 3 filas.
  * @param {Date} date - La fecha que se va a dibujar.
  * @param {boolean} isOtherMonth - True si el día no pertenece al mes actual.
  */
 function createDayCell(date, isOtherMonth) {
-    // 1. --- PREPARACIÓN DE LA CELDA ---
+    // 1. --- PREPARACIÓN DE LA CELDA Y SUS PARTES ---
     const dayCell = document.createElement('div');
     dayCell.classList.add('day-cell');
     if (isOtherMonth) {
@@ -313,7 +310,10 @@ function createDayCell(date, isOtherMonth) {
     }
     dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-    // Creamos las 5 sub-secciones de la celda.
+    // --- NUEVO: Creamos todos los contenedores de la nueva estructura ---
+    const topRow = document.createElement('div');
+    topRow.classList.add('day-top-row');
+
     const dayNumber = document.createElement('div');
     dayNumber.classList.add('day-number');
     dayNumber.textContent = date.getDate();
@@ -321,94 +321,61 @@ function createDayCell(date, isOtherMonth) {
     const dayEmoticon = document.createElement('div');
     dayEmoticon.classList.add('day-emoticon');
     
-    const dayShift = document.createElement('div');
-    dayShift.classList.add('day-shift');
-
-    const dayStartTime = document.createElement('div'); // <-- NUEVA SECCIÓN
-    dayStartTime.classList.add('day-start-time');
-
-    const dayEndTime = document.createElement('div');   // <-- NUEVA SECCIÓN
-    dayEndTime.classList.add('day-end-time');
+    const dayShiftName = document.createElement('div');
+    dayShiftName.classList.add('day-shift-name');
+    
+    const dayShiftTime = document.createElement('div');
+    dayShiftTime.classList.add('day-shift-time');
 
     date.setHours(0, 0, 0, 0);
 
-    // 2. --- OBTENCIÓN DE DATOS ---
+    // 2. --- LÓGICA DE VISUALIZACIÓN --- (Esta parte es casi idéntica a la anterior)
     const onVacation = isDateOnVacation(date);
     const isClosure = isShiftClosureDay(date);
     const isOverridden = isDayOverridden(date);
     const turn = getTurnForDate(date);
 
-    // 3. --- LÓGICA DE VISUALIZACIÓN POR PRIORIDAD ---
-    if (turn) {
-        dayShift.textContent = turn.name;
-        dayStartTime.textContent = turn.startTime || '--:--'; // Rellenamos la hora de inicio
-        dayEndTime.textContent = turn.endTime || '--:--';     // Rellenamos la hora de fin
+    if (onVacation && !isOverridden) {
+        dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
+    } else if (turn) {
+        dayShiftName.textContent = turn.name;
+        //dayShiftTime.textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : '';
+		  dayShiftTime.innerHTML = turn.startTime && turn.endTime ? `${turn.startTime}<br>${turn.endTime}` : '';
         dayCell.style.backgroundColor = turn.color;
         if (isColorDark(turn.color) && !isOtherMonth) {
-            // ... (código para texto blanco en fondos oscuros)
-            dayShift.style.color = 'white';
-            dayNumber.style.color = 'white';
-            dayStartTime.style.color = 'white';
-            dayEndTime.style.color = 'white';
+            // Hacemos que todo el texto sea blanco si el fondo es oscuro
+            dayCell.style.color = 'white';
         }
     }
 
-    if (onVacation && !isOverridden) {
-        dayEmoticon.textContent = '🌴';
-        dayShift.textContent = 'Vacaciones';
-        dayStartTime.textContent = ''; // Limpiamos las horas en vacaciones
-        dayEndTime.textContent = '';
-        dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
-    }
+    // Lógica de iconos (con la prioridad que establecimos)
+    if (turn && turn.isPaid) dayEmoticon.textContent = '💶';
+    if (onVacation) dayEmoticon.textContent = '🌴';
+    if (isOverridden) dayEmoticon.textContent = '📌';
     
-    if (isClosure) {
-        dayCell.classList.add('shift-closure-day');
-    }
+    // Lógica de destacados (borde y color de número)
+    if (isClosure) dayNumber.classList.add('closure-highlight');
+    if (date.getDay() === 0) dayNumber.classList.add('sunday-text');
+    if (isHoliday(date)) dayNumber.classList.add('holiday-highlight');
     
-    if (isOverridden) {
-        dayEmoticon.textContent = '📌';
-    } else if (!onVacation && isClosure) {
-        dayEmoticon.textContent = '';
-    } else if (!onVacation && turn && turn.isPaid) {
-        dayEmoticon.textContent = '💶';
-    }
-	
-	// --- LÓGICA PARA RESALTAR EL DÍA ACTUAL ---
-    // Creamos una nueva fecha para "hoy" y le quitamos la hora para una comparación precisa.
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    // Si la fecha de la celda que estamos dibujando es la misma que la de hoy...
     if (date.getTime() === today.getTime()) {
-    dayNumber.classList.add('today'); // Aplica el estilo al NÚMERO
-    dayCell.classList.add('today-cell');   // Aplica el estilo a la CASILLA
+        dayCell.classList.add('today-cell');
     }
-
     
-// Lógica para marcar los Domingos en rojo (esta ya la tienes).
-    if (date.getDay() === 0) {
-        dayNumber.classList.add('sunday-text');
-    }
+    // 3. --- MONTAJE FINAL (LA NUEVA ESTRUCTURA) ---
+    // Montamos la fila de arriba
+    topRow.appendChild(dayNumber);
+    topRow.appendChild(dayEmoticon);
 
-
-    // Lógica para marcar los festivos en rojo.
-    if (isHoliday(date)) {
-        dayNumber.classList.add('sunday-text');
-    }
-   
-	
-	
-    
-    // 4. --- MONTAJE FINAL ---
-    dayCell.appendChild(dayNumber);
-    dayCell.appendChild(dayEmoticon);
-    dayCell.appendChild(dayShift);
-    dayCell.appendChild(dayStartTime); // <-- AÑADIMOS LA NUEVA SECCIÓN
-    dayCell.appendChild(dayEndTime);   // <-- AÑADIMOS LA NUEVA SECCIÓN
+    // Montamos la celda entera
+    dayCell.appendChild(topRow);
+    dayCell.appendChild(dayShiftName);
+    dayCell.appendChild(dayShiftTime);
     
     calendarGrid.appendChild(dayCell);
 }
-
 
 // --- FUNCIÓN "MÁQUINA DEL TIEMPO" PARA CALCULAR EL TURNO DE UN DÍA ---
 
@@ -512,9 +479,9 @@ function isDateOnVacation(date) {
 //                 festivos                
 
 /**
- * Comprueba si una fecha es un festivo nacional según nuestra lista.
+ * Comprueba si una fecha es festivo y devuelve su nombre.
  * @param {Date} date - La fecha a comprobar.
- * @returns {boolean} - True si es un día festivo.
+ * @returns {string|null} - El nombre del festivo, o null si no lo es.
  */
 function isHoliday(date) {
     const year = date.getFullYear();
@@ -522,14 +489,12 @@ function isHoliday(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const dateKey = `${month}-${day}`;
 
-    // Comprueba si tenemos una lista para ese año y si esa lista incluye la fecha.
-    if (HOLIDAYS[year] && HOLIDAYS[year].includes(dateKey)) {
-        return true;
+    // Si encontramos la fecha en nuestra lista, devolvemos su nombre.
+    if (HOLIDAYS[year] && HOLIDAYS[year][dateKey]) {
+        return HOLIDAYS[year][dateKey];
     }
-    return false;
+    return null; // Si no, devolvemos null.
 }
-
-
 
 
 
@@ -2494,7 +2459,39 @@ function openDayModal(dateStr) {
     modalHeader.classList.remove('earnings-day');
     modalHeader.classList.remove('today-day');
     
+    //dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+const holidayName = isHoliday(date);
+    const holidayNameDisplay = document.getElementById('modal-holiday-name');
+
+    // Reseteamos el indicador de festivo.
+    holidayNameDisplay.classList.add('hidden');
+
+    // Rellenamos el título con la fecha.
     dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    // Si encontramos un nombre de festivo, lo mostramos.
+    if (holidayName) {
+        holidayNameDisplay.textContent = holidayName;
+        holidayNameDisplay.classList.remove('hidden');
+    }
+
+
+	  
+	// --- Rellenamos el título y comprobamos si es festivo ---
+const dateDisplay = dayModal.querySelector('#modal-date');
+let dateText = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+// Si la función detective nos dice que es un festivo...
+if (isHoliday(date)) {
+    // ...añadimos un pequeño texto de aviso al lado de la fecha.
+   
+}
+
+// Usamos .innerHTML para que pueda interpretar la etiqueta <span> que hemos añadido.
+dateDisplay.innerHTML = dateText;  
+	  
+
 
     const turn = getTurnForDate(date);
     const onVacation = isDateOnVacation(date);
@@ -2517,11 +2514,13 @@ function openDayModal(dateStr) {
         dayModal.querySelector('#modal-shift-name').textContent = turn.name;
         dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
         dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
-        
+       
         // --- LÍNEA CORREGIDA ---
         // Ahora le pasamos la 'date' a la función de cálculo.
         dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn, date);
-        
+	
+
+ 
 // --- Lógica para mostrar los comentarios (VERSIÓN ACTUALIZADA) ---
 
 // Primero, preparamos el texto para el comentario general del turno.
