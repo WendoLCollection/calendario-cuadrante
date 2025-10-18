@@ -1520,22 +1520,22 @@ input:checked + .slider:before {
     margin-bottom: 15px;
 }
 
-/* Estilo específico para el botón de Cerrar Sesión (con fondo rojo) */
+/* Estilo específico para el botón de Cerrar Sesión (fondo rojo suave) */
 #logout-menu-button {
-    background-color: #e63946; /* Fondo rojo vivo */
-    color: white !important;   /* Texto en blanco */
-    border: 1px solid #d02b3c;  /* Borde rojo un poco más oscuro */
+    background-color: #fff0f1; /* El rojo muy suave que teníamos */
+    border: 1px solid #eee;  /* Borde gris claro, como las otras tarjetas */
+    /* Mantenemos el color de texto por defecto (oscuro) */
 }
 
-/* Ajustamos el texto dentro del botón de cerrar sesión para que sea blanco */
-#logout-menu-button .menu-label {
-    color: white;
-}
-
-/* Cambiamos el color al pasar el ratón para dar feedback */
+/* Opcional: Oscurecer un poco al pasar el ratón */
 #logout-menu-button:hover {
-    background-color: #d02b3c; /* Rojo más oscuro */
-    border-color: #b02331;
+    background-color: #ffced3; /* Un poco más oscuro */
+    border-color: #ffb1b8;
+}
+
+/* Aseguramos que el texto dentro sea legible (color oscuro por defecto) */
+#logout-menu-button .menu-label {
+    color: #333; /* O el color que usen las otras etiquetas */
 	
 }
 
@@ -1794,6 +1794,7 @@ input:checked + .slider:before {
         color: #334;
         line-height: 1.5;
     }
+
 
 
 
