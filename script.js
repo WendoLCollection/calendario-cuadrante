@@ -1,3 +1,4 @@
+
 'use strict';
 
 // ===============================================================
@@ -131,15 +132,10 @@ const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 
 
-// Elementos de la Mini-Ventana de Asignar Turnos
-const multiShiftModal = document.getElementById('multi-shift-modal');
-const multiShiftModalTitle = document.getElementById('multi-shift-modal-title');
-const multiShiftList = document.getElementById('multi-shift-list');
-const cancelMultiShiftButton = document.getElementById('cancel-multi-shift-button');
-const confirmMultiShiftButton = document.getElementById('confirm-multi-shift-button');
 
-const quadrantForm = document.getElementById('quadrant-form');
-const vacationsListContainer = document.getElementById('vacations-list-container');
+
+
+
 
 
 
@@ -244,11 +240,6 @@ let summaryYear = new Date().getFullYear(); // Para saber qué año estamos vien
 let summaryMode = 'fullMonth'; // Para saber el modo de cálculo: 'fullMonth' o 'closureToClosure'
 
 let unsubscribeFromDataChanges = null; // Guardará la función para "apagar" el oyente
-
-
-let currentAssigningButton = null; // Guardará el botón "Asignar Turnos" que se ha pulsado.
-
-
 
 
 
@@ -555,145 +546,41 @@ function renderShiftsList() {
 }
 
 
-/**
- * Dibuja el formulario para crear/editar un cuadrante, con botones para asignar turnos.
- * @param {number} weekCount - El número de semanas que debe dibujar.
- */
+// --- FUNCIONES PARA GUARDAR Y CARGAR EN localStorage ---
+
+// --- FUNCIÓN PARA RELLENAR EL FORMULARIO DE CUADRANTE ---
 function populateQuadrantForm(weekCount) {
     const weekPatternSelector = document.getElementById('week-pattern-selector');
-    weekPatternSelector.innerHTML = ''; // Limpiamos el contenido.
+    weekPatternSelector.innerHTML = ''; // Limpiamos el contenido
     const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-    // Hacemos un bucle para cada semana que necesitemos dibujar.
+    // Hacemos un bucle para cada semana que necesitemos dibujar
     for (let i = 0; i < weekCount; i++) {
+        // Añadimos un título para cada semana
         const weekTitle = document.createElement('h3');
         weekTitle.textContent = `Semana ${i + 1}`;
         weekPatternSelector.appendChild(weekTitle);
-        
+
         daysOfWeek.forEach(day => {
             const dayRow = document.createElement('div');
             dayRow.classList.add('week-day-pattern');
 
-            // Ahora creamos un botón en lugar de un <select>.
-            dayRow.innerHTML = `
-                <label class="${day === 'Domingo' ? 'sunday-text' : ''}">${day}</label>
-                <button type="button" class="assign-shifts-button" data-week="${i}" data-day="${day.toLowerCase()}">
-                    Descanso
-                </button>
-            `;
+            // Creamos las opciones del selector: "Descanso" + los turnos creados
+            let optionsHTML = '<option value="REST">Descanso</option>';
+            shifts.forEach(shift => {
+                optionsHTML += `<option value="${shift.id}">${shift.name}</option>`;
+            });
+
+				dayRow.innerHTML = `
+					<label class="${day === 'Domingo' ? 'sunday-text' : ''}">${day}</label>
+					<select data-week="${i}" data-day="${day.toLowerCase()}">
+						${optionsHTML}
+					</select>
+				`;
             weekPatternSelector.appendChild(dayRow);
         });
     }
 }
-
-
-// ===============================================================
-// --- LÓGICA PARA LA MINI-VENTANA DE ASIGNAR TURNOS ---
-// ===============================================================
-
-const weekPatternSelector = document.getElementById('week-pattern-selector');
-
-// Este "oyente" espera clics DENTRO del formulario del cuadrante.
-weekPatternSelector.addEventListener('click', (event) => {
-    // Si el elemento pulsado es un botón de asignar turnos...
-    if (event.target.classList.contains('assign-shifts-button')) {
-        // ...abrimos la mini-ventana.
-        openMultiShiftModal(event.target);
-    }
-});
-
-// Este "oyente" es para el botón "Cancelar" de la mini-ventana.
-cancelMultiShiftButton.addEventListener('click', () => {
-    multiShiftModal.classList.add('hidden');
-});
-
-/**
- * Gestiona el clic en el botón "Aceptar" de la mini-ventana.
- * Recoge la selección, actualiza el formulario principal y cierra la ventana.
- */
-confirmMultiShiftButton.addEventListener('click', () => {
-    // 1. Buscamos todas las casillas que han sido marcadas.
-    const checkedBoxes = multiShiftList.querySelectorAll('input[type="checkbox"]:checked');
-    
-    // Creamos dos listas: una para los nombres (para mostrar) y otra para los IDs (para guardar).
-    const selectedShiftNames = [];
-    const selectedShiftIds = [];
-
-    checkedBoxes.forEach(checkbox => {
-        selectedShiftIds.push(checkbox.value); // Guardamos el ID del turno.
-        // Buscamos la etiqueta asociada a la casilla para obtener el nombre del turno.
-        const label = document.querySelector(`label[for="${checkbox.id}"]`);
-        if (label) {
-            selectedShiftNames.push(label.textContent);
-        }
-    });
-
-    // 2. Actualizamos el botón del formulario principal que abrió esta ventana.
-    if (currentAssigningButton) {
-        if (selectedShiftNames.length > 0) {
-            // Si se ha seleccionado algo, mostramos los nombres separados por comas.
-            currentAssigningButton.textContent = selectedShiftNames.join(', ');
-        } else {
-            // Si no se ha seleccionado nada, ponemos "Descanso" por defecto.
-            currentAssigningButton.textContent = 'Descanso';
-        }
-
-        // 3. ¡Paso Clave! Guardamos los IDs seleccionados "invisiblemente" en el propio botón.
-        // Usamos JSON.stringify para convertir la lista de IDs en un texto que podamos guardar.
-        currentAssigningButton.dataset.selectedShifts = JSON.stringify(selectedShiftIds);
-    }
-
-    // 4. Cerramos la mini-ventana.
-    multiShiftModal.classList.add('hidden');
-});
-
-
-
-/**
- * Abre la mini-ventana para asignar múltiples turnos a un día del cuadrante.
- * @param {HTMLElement} buttonElement - El botón "Asignar Turnos" que fue pulsado.
- */
-function openMultiShiftModal(buttonElement) {
-    // 1. Guardamos una referencia al botón que hemos pulsado.
-    currentAssigningButton = buttonElement;
-
-    // 2. Leemos el día de la semana del botón y actualizamos el título de la ventana.
-    const day = buttonElement.dataset.day;
-    multiShiftModalTitle.textContent = `Asignar Turnos para ${day.charAt(0).toUpperCase() + day.slice(1)}`;
-
-    // 3. Limpiamos la lista por si tenía turnos de una vez anterior.
-    multiShiftList.innerHTML = '';
-
-    // 4. Creamos una opción para "Descanso".
-    multiShiftList.innerHTML += `
-        <div class="multi-shift-item">
-            <input type="checkbox" id="shift-check-REST" value="REST">
-            <label for="shift-check-REST">Descanso</label>
-        </div>
-    `;
-
-    // 5. Creamos una opción con checkbox por cada turno que has creado.
-    shifts.forEach(shift => {
-        multiShiftList.innerHTML += `
-            <div class="multi-shift-item">
-                <input type="checkbox" id="shift-check-${shift.id}" value="${shift.id}">
-                <label for="shift-check-${shift.id}">${shift.name}</label>
-            </div>
-        `;
-    });
-
-    // 6. Finalmente, mostramos la ventana.
-    multiShiftModal.classList.remove('hidden');
-}
-
-
-
-
-
-
-
-
-
 
 // --- FUNCIONES PARA GUARDAR Y CARGAR EN localStorage ---
 
@@ -843,15 +730,19 @@ async function loadQuadrants() {
 
 /**
  * Guarda las notas y modificaciones diarias.
- * Devuelve la promesa de la operación de guardado para poder esperar a que termine.
+ * Si el usuario ha iniciado sesión, las guarda en la nube (Firestore).
+ * Si no, las guarda en la memoria local (localStorage).
  */
 function saveDayNotes() {
+    // 1. Obtenemos el usuario que tiene la sesión iniciada.
     const user = auth.currentUser;
 
     if (user) {
         // --- MODO REGISTRADO: Guardar en la Nube ---
-        // La palabra 'return' es la clave. Ahora devolvemos la "promesa" de la operación.
-        return db.collection('userData').doc(user.uid).set({
+        
+        // 2. Apuntamos al documento único de este usuario.
+        db.collection('userData').doc(user.uid).set({
+            // Usamos 'merge: true' para no sobreescribir los otros datos.
             dayNotes: dayNotes 
         }, { merge: true })
         .catch((error) => {
@@ -861,9 +752,9 @@ function saveDayNotes() {
 
     } else {
         // --- MODO INVITADO: Guardar en Local ---
+        
+        // 3. Si no hay usuario, usamos el método de siempre.
         localStorage.setItem('calendarAppData_dayNotes', JSON.stringify(dayNotes));
-        // Devolvemos una promesa resuelta para que el código no falle.
-        return Promise.resolve();
     }
 }
 
@@ -1700,51 +1591,40 @@ quadrantWeeksInput.addEventListener('input', () => {
 // --- 12. LÓGICA DEL FORMULARIO DE CUADRANTE ---
 // ********************************************************************************************************************************************************************************************************************************************
 
-/**
- * Gestiona el guardado de un cuadrante nuevo o editado.
- * Ahora lee la selección de múltiples turnos desde los botones.
- */
+const quadrantForm = document.getElementById('quadrant-form');
 quadrantForm.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    // --- Validación de fecha duplicada (esta parte no cambia) ---
+    // --- INICIO DE LA VALIDACIÓN ---
     const startDateValue = document.getElementById('quadrant-start-date').value;
     const quadrantId = document.getElementById('quadrant-id-input').value;
 
+    // Buscamos si algún OTRO cuadrante ya usa la misma fecha de inicio.
+    // La condición 'quad.id !== Number(quadrantId)' es para ignorar el cuadrante que estamos editando.
     const isDuplicateDate = quadrants.some(
         quad => quad.startDate === startDateValue && quad.id !== Number(quadrantId)
     );
 
+    // Si encontramos una fecha duplicada, mostramos un aviso y paramos.
     if (isDuplicateDate) {
         alert('¡Atención! Ya existe otro cuadrante que empieza en la misma fecha. Por favor, elige otra.');
-        return;
+        return; // Detenemos el proceso de guardado aquí mismo.
     }
+    // --- FIN DE LA VALIDACIÓN ---
 
-    // --- NUEVA LÓGICA DE LECTURA DE DATOS ---
+    // (El resto del código de guardado sigue igual)
     const weekCount = quadrantWeeksInput.value;
     const patterns = [];
 
-    // Recorremos cada semana del formulario.
     for (let i = 0; i < weekCount; i++) {
         const weekPattern = {};
-        const daysOfWeek = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-
-        // Para cada día de la semana, buscamos su botón correspondiente.
-        daysOfWeek.forEach(day => {
-            const button = weekPatternSelector.querySelector(`button[data-week="${i}"][data-day="${day}"]`);
-            if (button && button.dataset.selectedShifts) {
-                // Si el botón tiene datos guardados, los leemos.
-                // Usamos JSON.parse para convertir el texto de vuelta a una lista de IDs.
-                weekPattern[day] = JSON.parse(button.dataset.selectedShifts);
-            } else {
-                // Si no hay nada seleccionado, guardamos una lista vacía.
-                weekPattern[day] = [];
-            }
+        const weekSelectors = quadrantForm.querySelectorAll(`#week-pattern-selector select[data-week="${i}"]`);
+        weekSelectors.forEach(select => {
+            weekPattern[select.dataset.day] = select.value;
         });
         patterns.push(weekPattern);
     }
 
-    // --- El resto de la lógica de guardado (esta parte no cambia) ---
     const quadrantData = {
         startDate: startDateValue,
         weeks: weekCount,
@@ -1752,7 +1632,7 @@ quadrantForm.addEventListener('submit', (event) => {
     };
 
     if (quadrantId) {
-        // Modo Edición
+        // MODO EDICIÓN
         quadrants = quadrants.map(quad => {
             if (quad.id === Number(quadrantId)) {
                 return { ...quad, ...quadrantData };
@@ -1760,16 +1640,20 @@ quadrantForm.addEventListener('submit', (event) => {
             return quad;
         });
     } else {
-        // Modo Añadir
+        // MODO AÑADIR
         const newQuadrant = { id: Date.now(), ...quadrantData };
         quadrants.push(newQuadrant);
     }
 
     saveQuadrants();
     renderQuadrantsList();
-    renderCalendar();
-    
-    // Volvemos a la lista de cuadrantes.
+    renderCalendar(); 
+	
+	
+    quadrantForm.reset();
+    document.getElementById('quadrant-id-input').value = '';
+    document.getElementById('quadrant-form-title').textContent = 'Añadir Cuadrante';
+
     quadrantFormView.classList.add('hidden');
     quadrantListView.classList.remove('hidden');
 });
@@ -2151,7 +2035,7 @@ shiftIsPaidCheckbox.addEventListener('change', () => {
 const vacationsListView = document.getElementById('vacations-list-view');
 const backToSettingsFromVacationsButton = document.getElementById('back-to-settings-from-vacations-button');
 const addNewVacationButton = document.getElementById('add-new-vacation-button');
-//const vacationsListContainer = document.getElementById('vacations-list-container');
+const vacationsListContainer = document.getElementById('vacations-list-container');
 const vacationFormView = document.getElementById('vacation-form-view');
 const vacationForm = document.getElementById('vacation-form');
 const cancelVacationFormButton = document.getElementById('cancel-vacation-form-button');
@@ -2957,41 +2841,15 @@ if (target.id === 'modal-set-rest-button') { // Usamos el ID del botón que crea
 }
 
 
-
 // Si se pulsa el botón "Restablecer"
 if (target.id === 'modal-reset-button') {
     if (confirm('¿Quieres eliminar los cambios manuales y restablecer el turno del cuadrante?')) {
-        
-        // Primero, borramos la nota de la memoria local para que la app reaccione al instante.
+        // Borramos la nota/excepción completa para este día.
         delete dayNotes[currentEditingDate];
         
-        // Ahora, nos comunicamos con la base de datos para hacer el cambio permanente.
-        const user = auth.currentUser;
-
-        if (user) {
-            // --- MODO NUBE: Usamos la orden explícita de borrado de Firebase ---
-            const userDocRef = db.collection('userData').doc(user.uid);
-            
-            // Esta es la orden clave: le decimos que actualice el campo 'dayNotes'
-            // y, dentro de él, borre la clave específica de este día.
-            userDocRef.update({
-                [`dayNotes.${currentEditingDate}`]: firebase.firestore.FieldValue.delete()
-            }).then(() => {
-                // Solo cuando la nube confirma el borrado, actualizamos la pantalla.
-                console.log("Modificación del día eliminada de la nube con éxito.");
-                renderCalendar();
-                dayModal.classList.add('hidden');
-            }).catch(error => {
-                console.error("Error al borrar la nota de la nube:", error);
-                alert("No se pudo restablecer el día. Revisa tu conexión.");
-            });
-
-        } else {
-            // --- MODO INVITADO: Guardamos el estado sin la nota ---
-            saveDayNotes();
-            renderCalendar();
-            dayModal.classList.add('hidden');
-        }
+        saveDayNotes();      // Guardamos el cambio.
+        renderCalendar();    // Actualizamos el calendario.
+        dayModal.classList.add('hidden'); // Cerramos la ventana.
     }
 }
 
