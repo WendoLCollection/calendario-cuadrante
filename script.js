@@ -311,7 +311,7 @@ function createDayCell(date, isOtherMonth) {
     }
     dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-    // --- NUEVO: Creamos todos los contenedores de la nueva estructura ---
+    // --- Creamos todos los contenedores de la nueva estructura ---
     const topRow = document.createElement('div');
     topRow.classList.add('day-top-row');
 
@@ -330,35 +330,37 @@ function createDayCell(date, isOtherMonth) {
 
     date.setHours(0, 0, 0, 0);
 
-    // 2. --- LÓGICA DE VISUALIZACIÓN --- (Esta parte es casi idéntica a la anterior)
+    // 2. --- LÓGICA DE VISUALIZACIÓN ---
     const onVacation = isDateOnVacation(date);
     const isClosure = isShiftClosureDay(date);
     const isOverridden = isDayOverridden(date);
     const turn = getTurnForDate(date);
+    const holidayName = isHoliday(date); // Comprobamos si es festivo
 
+    // Lógica para el color de fondo y el texto del turno/horas
     if (onVacation && !isOverridden) {
         dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
     } else if (turn) {
         dayShiftName.textContent = turn.name;
-        //dayShiftTime.textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : '';
-		  dayShiftTime.innerHTML = turn.startTime && turn.endTime ? `${turn.startTime}<br>${turn.endTime}` : '';
+        dayShiftTime.innerHTML = turn.startTime && turn.endTime ? `${turn.startTime}<br>${turn.endTime}` : '';
         dayCell.style.backgroundColor = turn.color;
+        // Si el fondo es oscuro, ponemos todo el texto de la celda en blanco
         if (isColorDark(turn.color) && !isOtherMonth) {
-            // Hacemos que todo el texto sea blanco si el fondo es oscuro
             dayCell.style.color = 'white';
         }
     }
 
-    // Lógica de iconos (con la prioridad que establecimos)
+    // Lógica para los iconos, con su jerarquía de prioridad
     if (turn && turn.isPaid) dayEmoticon.textContent = '💶';
     if (onVacation) dayEmoticon.textContent = '🌴';
     if (isOverridden) dayEmoticon.textContent = '📌';
     
-    // Lógica de destacados (borde y color de número)
+    // Lógica para los destacados del número del día
     if (isClosure) dayNumber.classList.add('closure-highlight');
+    if (holidayName) dayNumber.classList.add('holiday-highlight');
     if (date.getDay() === 0) dayNumber.classList.add('sunday-text');
-    if (isHoliday(date)) dayNumber.classList.add('holiday-highlight');
     
+    // Lógica para el borde de la celda del día de hoy
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (date.getTime() === today.getTime()) {
@@ -377,6 +379,7 @@ function createDayCell(date, isOtherMonth) {
     
     calendarGrid.appendChild(dayCell);
 }
+
 
 // --- FUNCIÓN "MÁQUINA DEL TIEMPO" PARA CALCULAR EL TURNO DE UN DÍA ---
 
@@ -1152,40 +1155,6 @@ async function loadAllData() {
     }
 }
 
-
-
-
-/*
-loadShifts();
-loadQuadrants();
-loadOvertimeRates();
-loadVacations();
-loadShiftClosures();
-loadDayNotes();
-renderShiftsList();
-renderQuadrantsList();
-renderColorSelector();
-renderCalendar();
-checkAndShowTutorial(); 
-renderGuestHeader();
-
-/**
- * Función de ayuda para cargar todos los datos desde localStorage.
- * Agrupa todas las funciones 'load' en una sola llamada.
-
-function loadAllDataFromLocalStorage() {
-    loadShifts();
-    loadQuadrants();
-    loadOvertimeRates();
-    loadVacations();
-    loadShiftClosures();
-    loadDayNotes();
-}
-
-
- * Función de ayuda para redibujar todas las listas de los ajustes.
- * Agrupa varias funciones 'render' en una sola llamada.
- */
 function renderAllLists() {
     // Estas funciones dibujan el contenido de las pantallas de ajustes.
     renderShiftsList();
