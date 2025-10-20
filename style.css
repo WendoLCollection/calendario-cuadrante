@@ -1722,3 +1722,9 @@ input:checked + .slider:before {
     align-items: center;
     padding-left: 0; /* <-- AÑADE ESTA LÍNEA */
 }
+
+/* Borde azul para destacar la casilla del día actual (no afecta al tamaño) */
+.day-cell.today-cell {
+    outline: 3px solid #4a90e2;
+    outline-offset: -3px; /* Dibuja el borde "hacia adentro" */
+}
