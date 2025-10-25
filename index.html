@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Turnos</title>
     
-    <link rel="stylesheet" href="style.css?v=0">
+    <link rel="stylesheet" href="style.css?v=1">
     
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="favicon.png" type="image/png">
@@ -130,6 +130,11 @@
 							<button id="back-to-calendar-button" class="header-button">←</button>
 							<h1 class="header-title">Ajustes</h1>
 						</header>
+						
+			<div id="update-notification" class="update-banner hidden">
+				<span>¡Nueva versión disponible!</span>
+				<button id="update-app-button" class="button-primary">Actualizar Ahora</button>
+			</div>						
 					
 						
 								<main id="settings-content">
@@ -191,12 +196,21 @@
 		</header>
 		<div class="add-button-container">
 			<button id="add-new-shift-button" class="button-primary">+ Añadir nuevo turno</button>
+
 		</div>
 
     <main id="shifts-list-container">
 	
-        
+  <p class="explanation-text warning">
+    <strong>Atención:</strong> </br>
+	Estás creando un patrón de rotación. Los turnos que definas aquí se repetirán cíclicamente en el calendario. 
+	</br>
+	Ahora puedes Añadir/Editar varios turnos en en el mismo dia.
+</p>      
         <div class="shift-item">
+
+	
+				
 
         </div>
         </main>
@@ -210,6 +224,8 @@
     </header>
 
     <main>
+	
+	
         <form id="shift-form">
 		  <input type="hidden" id="shift-id-input">
             <div class="form-group">
@@ -279,14 +295,25 @@
     </div>
 
     <main id="quadrant-list-container">
-        <div class="active-quadrant-section">
+	
+<p class="explanation-text warning">
+    <strong>Atención:</strong> </br>
+	Estás creando un patrón de rotación. Los turnos que definas aquí se repetirán cíclicamente en el calendario. 
+	</br>
+	Ahora puedes Añadir/Editar varios turnos en en el mismo dia.
+</p>		
+	
+        
+		<div class="content-section">
             <h2>Cuadrante Activo</h2>
             <div id="active-quadrant-display">
                 <p class="empty-list-message">Aún no has activado ningún cuadrante.</p>
             </div>
         </div>
 
-        <div class="quadrant-list-section">
+    
+		
+		<div class="content-section">
             <h2>Todos los Cuadrantes</h2>
             <div id="all-quadrants-list">
                 </div>
@@ -304,22 +331,27 @@
     <main>
         <form id="quadrant-form">
 		  <input type="hidden" id="quadrant-id-input">
-			<div class="form-group-inline"> <div class="form-group">
-					<label for="quadrant-start-date">Fecha de inicio </label>
-					<input type="date" id="quadrant-start-date" required>
-				</div>
 
-				<div class="form-group">
-					<label for="quadrant-weeks">Duración (en semanas)</label>
-					<input type="number" id="quadrant-weeks" value="3" min="1" required>
-				</div>
-			</div> 
+		
+<div class="quadrant-config-section">
+    <div class="form-group-inline">
+        <div class="form-group">
+            <label for="quadrant-start-date">Fecha de inicio </label>
+            <input type="date" id="quadrant-start-date" required>
+        </div>
+        <div class="form-group">
+            <label for="quadrant-weeks">Duración (en semanas)</label>
+            <input type="number" id="quadrant-weeks" value="3" min="1" required>
+        </div>
+    </div>
+</div>			
+			
+
+
             
-            <div class="form-group">
-                <label>Patrón de turnos de la semana</label>
-                <div id="week-pattern-selector">
-                    </div>
-            </div>
+				<div id="week-pattern-container" class="form-group">
+					</div>
+					
 
             <div class="form-actions">
                 <button type="submit" class="button-primary">Guardar Cuadrante</button>
@@ -340,8 +372,16 @@
     <div class="add-button-container">
         <button id="add-new-vacation-button" class="button-primary">+ Añadir vacaciones</button>
     </div>
+	
+<p class="explanation-text warning">
+        <strong>Atención:</strong> <br> 
+Aqui añadiremos nuestros periodos de vacaciones.
+<br> 
+en el calendario saldrá con una 🌴
 
-    <main id="vacations-list-container">
+    </p>	
+
+    <main id="vacations-list-container" class="content-section">
         </main>
 </div>
 
@@ -413,8 +453,13 @@
     <div class="add-button-container">
         <button id="add-new-overtime-button" class="button-primary">+ Añadir nueva tarifa</button>
     </div>
-
-    <main id="overtime-list-container">
+	
+<p class="explanation-text warning">
+        <strong>Atención:</strong> <br> Aquí solo se crean las <em>tarifas</em> de las horas extras (ej: Festivo, Nocturna). Para <em>añadir</em> horas a un día concreto, debes hacerlo desde la ventana de edición de ese día en el calendario.
+    </p>
+	
+	
+	<main id="overtime-list-container" class="content-section">
         </main>
 
 </div>
@@ -430,7 +475,7 @@
         <h1 class="header-title">Estadísticas de Horas</h1>
     </header>
 
-    <main id="stats-container">
+<main id="stats-container" class="content-section">
         <div class="stats-section">
             <h2>Resumen de Horas por Cuadrante</h2>
             <div id="quadrant-summary-container">
@@ -482,27 +527,27 @@
 		
 <main class="modal-body">
     <div id="modal-view-section">
-        <div class="modal-section">
-            <h3>Información del Turno</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span>Turno:</span>
-                    <span id="modal-shift-name">--</span>
-                </div>
-                <div class="info-item">
-                    <span>Horario:</span>
-                    <span id="modal-shift-time">--</span>
-                </div>
-                <div class="info-item">
-                    <span>Horas Totales:</span>
-                    <span id="modal-total-hours">--</span>
-                </div>
-                <div class="info-item">
-                    <span>Ganancias:</span>
-                    <span id="modal-earnings">--</span>
-                </div>
-            </div>
+	
+	
+<div class="modal-section">
+    <h3>Información del Día</h3>
+    
+    <div id="modal-shift-list-container">
         </div>
+
+    <div class="info-grid totals-grid">
+        <div class="info-item">
+            <span>Horas Totales:</span>
+            <span id="modal-total-hours">--</span>
+        </div>
+        <div class="info-item">
+            <span>Ganancias:</span>
+            <span id="modal-earnings">--</span>
+        </div>
+    </div>
+</div>
+		
+		
 
 		<div id="modal-closure-summary" class="modal-section hidden">
 			<h3>Resumen del Periodo de Cierre</h3>
@@ -656,17 +701,55 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<script src="script.js?v=0"></script>
+<script src="script.js?v=1"></script>
+
 <script>
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(registration => console.log('ServiceWorker registrado con éxito.'))
-                .catch(error => console.log('Fallo en el registro de ServiceWorker:', error));
+        let newWorker;
+
+        // 1. Registramos nuestro Service Worker
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            // 2. Comprobamos si hay una nueva versión esperando
+            if (reg.waiting) {
+                newWorker = reg.waiting;
+                showUpdateBanner(); // Si la hay, mostramos el aviso
+            }
+
+            // 3. Escuchamos si llega una nueva versión MIENTRAS usamos la app
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    // Si el nuevo worker ha terminado de instalarse y está "esperando"...
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdateBanner(); // ...mostramos el aviso.
+                    }
+                });
+            });
+        });
+
+        // 4. Función para mostrar el aviso de actualización
+        function showUpdateBanner() {
+            const banner = document.getElementById('update-notification');
+            const updateButton = document.getElementById('update-app-button');
+            if (banner) banner.classList.remove('hidden');
+
+            if (updateButton) {
+                updateButton.addEventListener('click', () => {
+                    // Al pulsar, le decimos al nuevo worker que tome el control
+                    newWorker.postMessage({ action: 'skipWaiting' });
+                });
+            }
+        }
+
+        // 5. Recargamos la página cuando el nuevo worker toma el control
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            window.location.reload();
+            refreshing = true;
         });
     }
 </script>
 
 </body>
 </html>
-

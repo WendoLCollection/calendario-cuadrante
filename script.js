@@ -131,11 +131,11 @@ const logoutMenuButton = document.getElementById('logout-menu-button');
 const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 
+const weekPatternContainer = document.getElementById('week-pattern-container');
 
+const quadrantForm = document.getElementById('quadrant-form');
 
-
-
-
+const vacationsListContainer = document.getElementById('vacations-list-container');
 
 
 
@@ -298,12 +298,12 @@ function renderCalendar() {
 
 
 /**
- * Crea y pinta una celda del calendario con el nuevo diseño de 3 filas.
+ * Crea y pinta una celda del calendario, con el nuevo formato visual.
  * @param {Date} date - La fecha que se va a dibujar.
  * @param {boolean} isOtherMonth - True si el día no pertenece al mes actual.
  */
 function createDayCell(date, isOtherMonth) {
-    // 1. --- PREPARACIÓN DE LA CELDA Y SUS PARTES ---
+    // 1. --- PREPARACIÓN ---
     const dayCell = document.createElement('div');
     dayCell.classList.add('day-cell');
     if (isOtherMonth) {
@@ -311,72 +311,84 @@ function createDayCell(date, isOtherMonth) {
     }
     dayCell.dataset.date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-    // --- Creamos todos los contenedores de la nueva estructura ---
     const topRow = document.createElement('div');
     topRow.classList.add('day-top-row');
-
     const dayNumber = document.createElement('div');
     dayNumber.classList.add('day-number');
     dayNumber.textContent = date.getDate();
-
     const dayEmoticon = document.createElement('div');
     dayEmoticon.classList.add('day-emoticon');
-    
     const dayShiftName = document.createElement('div');
     dayShiftName.classList.add('day-shift-name');
-    
     const dayShiftTime = document.createElement('div');
     dayShiftTime.classList.add('day-shift-time');
 
     date.setHours(0, 0, 0, 0);
 
-    // 2. --- LÓGICA DE VISUALIZACIÓN ---
+    // 2. --- LÓGICA DE DATOS ---
     const onVacation = isDateOnVacation(date);
     const isClosure = isShiftClosureDay(date);
     const isOverridden = isDayOverridden(date);
     const turn = getTurnForDate(date);
-    const holidayName = isHoliday(date); // Comprobamos si es festivo
+    const allTurnsForDay = getAllTurnsForDate(date);
+    const holidayName = isHoliday(date);
 
-    // Lógica para el color de fondo y el texto del turno/horas
+    // 3. --- LÓGICA VISUAL ---
     if (onVacation && !isOverridden) {
+        // Si es vacaciones Y NO ha sido editado, mostramos el estilo de vacaciones.
+        dayEmoticon.textContent = '🌴';
+        dayShiftName.textContent = '';
+        dayShiftTime.textContent = '';
         dayCell.style.backgroundColor = isOtherMonth ? '#e9f5db' : '#d8f3dc';
+
     } else if (turn) {
-        dayShiftName.textContent = turn.name;
-        dayShiftTime.innerHTML = turn.startTime && turn.endTime ? `${turn.startTime}<br>${turn.endTime}` : '';
-        dayCell.style.backgroundColor = turn.color;
-        // Si el fondo es oscuro, ponemos todo el texto de la celda en blanco
+		
+		
+// --- LÓGICA CORREGIDA ---
+// 1. Mostramos el nombre del primer turno y el indicador (+N) si hay más.
+if (allTurnsForDay.length > 1) {
+    dayShiftName.innerHTML = `${turn.name}<br><span class="multi-turn-indicator">(+${allTurnsForDay.length - 1})</span>`;
+} else {
+    dayShiftName.textContent = turn.name;
+}
+
+// 2. Creamos una lista de los horarios de TODOS los turnos del día.
+const timeStrings = allTurnsForDay.map(t => {
+    return t.startTime && t.endTime ? `${t.startTime}-${t.endTime}`:'';
+});
+
+// 3. Unimos cada horario con un salto de línea para que se muestren uno debajo del otro.
+dayShiftTime.innerHTML = timeStrings.join('<br>');
+	
+		//dayShiftTime.textContent = turn.startTime || '';
+      // dayShiftTime.textContent = turn.startTime && turn.endTime ? `${turn.startTime}-${turn.endTime}`:'';
+		//dayShiftTime.innerHTML = turn.startTime && turn.endTime ? `${turn.startTime}<br>${turn.endTime}` : '';
+		dayCell.style.backgroundColor = turn.color;
         if (isColorDark(turn.color) && !isOtherMonth) {
             dayCell.style.color = 'white';
         }
-    }
+    }	
 
-    // Lógica para los iconos, con su jerarquía de prioridad
+
+    // El resto de la lógica de iconos y destacados se mantiene igual
     if (turn && turn.isPaid) dayEmoticon.textContent = '💶';
     if (onVacation) dayEmoticon.textContent = '🌴';
     if (isOverridden) dayEmoticon.textContent = '📌';
-    
-    // Lógica para los destacados del número del día
     if (isClosure) dayNumber.classList.add('closure-highlight');
     if (holidayName) dayNumber.classList.add('holiday-highlight');
     if (date.getDay() === 0) dayNumber.classList.add('sunday-text');
-    
-    // Lógica para el borde de la celda del día de hoy
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (date.getTime() === today.getTime()) {
         dayCell.classList.add('today-cell');
     }
     
-    // 3. --- MONTAJE FINAL (LA NUEVA ESTRUCTURA) ---
-    // Montamos la fila de arriba
+    // 4. --- MONTAJE FINAL ---
     topRow.appendChild(dayNumber);
     topRow.appendChild(dayEmoticon);
-
-    // Montamos la celda entera
     dayCell.appendChild(topRow);
     dayCell.appendChild(dayShiftName);
     dayCell.appendChild(dayShiftTime);
-    
     calendarGrid.appendChild(dayCell);
 }
 
@@ -385,64 +397,21 @@ function createDayCell(date, isOtherMonth) {
 
 /**
  * La "máquina del tiempo": calcula el turno que corresponde a una fecha específica.
+ * Ahora entiende la nueva estructura de múltiples turnos por día.
  * @param {Date} date - La fecha para la que se quiere obtener el turno.
- * @returns {object|null} - El objeto del turno correspondiente, o null.
+ * @returns {object|null} - El objeto del primer turno correspondiente, o null.
  */
 function getTurnForDate(date) {
-    // Creamos una clave única para la fecha en formato YYYY-MM-DD.
+    // Creamos la clave única para la fecha.
     const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const note = dayNotes[dateKey];
 
     // --- 1. MÁXIMA PRIORIDAD: Turnos personalizados para un día concreto ---
-    // Comprobamos si existe un turno personalizado guardado en las notas de ese día.
     if (note && note.overrideShift) {
-        // Si existe, lo devolvemos inmediatamente, ignorando todo lo demás.
         return note.overrideShift;
     }
 
-    // --- 2. PRIORIDAD MEDIA: Lógica de Cuadrantes (si no hay turno personalizado) ---
-    const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
-    if (candidateQuadrants.length === 0) {
-        return null; // No hay cuadrantes que apliquen, no hay turno.
-    }
-
-    // De los posibles cuadrantes, buscamos el más reciente.
-    candidateQuadrants.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-    const governingQuadrant = candidateQuadrants[0];
-
-    // Calculamos los días transcurridos para saber en qué semana del ciclo estamos.
-    const startDate = new Date(governingQuadrant.startDate + 'T00:00:00');
-    const diffTime = date - startDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    const weekOfCycle = Math.floor(diffDays / 7) % governingQuadrant.weeks;
-    const dayOfWeek = date.getDay();
-    const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const dayName = dayNames[dayOfWeek];
-
-    // Buscamos el ID del turno en el patrón del cuadrante.
-    const turnId = governingQuadrant.patterns[weekOfCycle][dayName];
-
-    // --- 3. Devolvemos el turno encontrado ---
-    if (turnId === 'REST') {
-        return { name: 'Descanso', color: '#f0f2f5' };
-    } else {
-        // Buscamos la información completa del turno en nuestra lista de turnos.
-        const foundShift = shifts.find(s => s.id === Number(turnId));
-        // Si no lo encuentra (porque fue borrado), devolvemos un turno de "error".
-        return foundShift ? foundShift : { name: 'TURNO BORRADO', color: '#ff8fa3' };
-    }
-}
-
-
-/**
- * Calcula el turno BASE de un día, basándose únicamente en el cuadrante.
- * Esta función es crucial porque ignora cualquier modificación manual que se haya hecho.
- * @param {Date} date - La fecha para la que se quiere obtener el turno base.
- * @returns {object|null} - El objeto del turno original del cuadrante, o null.
- */
-function getBaseTurnForDate(date) {
-    // Esta función es una copia de getTurnForDate, pero sin la parte que revisa las notas del día (dayNotes).
+    // --- 2. Lógica de Cuadrantes ---
     const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
     if (candidateQuadrants.length === 0) return null;
 
@@ -458,16 +427,113 @@ function getBaseTurnForDate(date) {
     const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     const dayName = dayNames[dayOfWeek];
 
-    const turnId = governingQuadrant.patterns[weekOfCycle][dayName];
+    // --- LÓGICA CORREGIDA ---
+    // Ahora leemos la LISTA de turnos para ese día.
+    const turnIdsForDay = governingQuadrant.patterns[weekOfCycle][dayName];
+
+    // Si no hay turnos para ese día o la lista está vacía, no hay turno.
+    if (!turnIdsForDay || turnIdsForDay.length === 0) {
+        return null;
+    }
+    
+    // Para la vista del calendario, de momento solo usamos el PRIMER turno de la lista.
+    const turnId = turnIdsForDay[0];
+
+    // --- 3. Devolvemos el turno encontrado ---
+    if (turnId === 'REST') {
+        return { name: '', color: '#f0f2f5' };
+    } else {
+        const foundShift = shifts.find(s => s.id === Number(turnId));
+        return foundShift ? foundShift : { name: 'TURNO BORRADO', color: '#ff8fa3' };
+    }
+}
+
+
+
+/**
+ * Obtiene la LISTA COMPLETA de turnos para una fecha específica.
+ * @param {Date} date - La fecha para la que se quieren obtener los turnos.
+ * @returns {Array<object>} - Una lista con todos los objetos de turno para ese día.
+ */
+function getAllTurnsForDate(date) {
+    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const note = dayNotes[dateKey];
+
+    // 1. MÁXIMA PRIORIDAD: Si hay un turno personalizado, solo devolvemos ese.
+    if (note && note.overrideShift) {
+        return [note.overrideShift]; // Lo devolvemos dentro de una lista.
+    }
+
+    // 2. Lógica de Cuadrantes (si no hay turno personalizado).
+    const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
+    if (candidateQuadrants.length === 0) return []; // Si no hay cuadrante, devolvemos una lista vacía.
+
+    candidateQuadrants.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    const governingQuadrant = candidateQuadrants[0];
+
+    // ... (El resto de la lógica para encontrar el día es la misma)
+    const startDate = new Date(governingQuadrant.startDate + 'T00:00:00');
+    const diffTime = date - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const weekOfCycle = Math.floor(diffDays / 7) % governingQuadrant.weeks;
+    const dayOfWeek = date.getDay();
+    const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const dayName = dayNames[dayOfWeek];
+
+    // Obtenemos la LISTA de IDs de turno para ese día.
+    const turnIdsForDay = governingQuadrant.patterns[weekOfCycle]?.[dayName];
+
+    if (!turnIdsForDay || turnIdsForDay.length === 0) {
+        return []; // Si no hay turnos, devolvemos una lista vacía.
+    }
+    
+    // 3. Convertimos la lista de IDs en una lista de objetos de turno completos.
+    return turnIdsForDay.map(turnId => {
+        if (turnId === 'REST') {
+            return { name: 'Descanso', color: '#f0f2f5' };
+        }
+        const foundShift = shifts.find(s => s.id === Number(turnId));
+        return foundShift ? foundShift : { name: 'BORRADO', color: '#ff8fa3' };
+    });
+}
+
+
+/**
+ * Calcula el turno BASE de un día, basándose únicamente en el cuadrante.
+ * Versión actualizada que entiende la estructura de múltiples turnos.
+ */
+function getBaseTurnForDate(date) {
+    const candidateQuadrants = quadrants.filter(q => new Date(q.startDate + 'T00:00:00') <= date);
+    if (candidateQuadrants.length === 0) return null;
+
+    candidateQuadrants.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    const governingQuadrant = candidateQuadrants[0];
+
+    const startDate = new Date(governingQuadrant.startDate + 'T00:00:00');
+    const diffTime = date - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const weekOfCycle = Math.floor(diffDays / 7) % governingQuadrant.weeks;
+    const dayOfWeek = date.getDay();
+    const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const dayName = dayNames[dayOfWeek];
+
+    // --- LÓGICA CORREGIDA ---
+    // Leemos la LISTA de turnos.
+    const turnIdsForDay = governingQuadrant.patterns[weekOfCycle]?.[dayName];
+    if (!turnIdsForDay || turnIdsForDay.length === 0) return null;
+
+    // Cogemos solo el PRIMER ID para el auto-rellenado.
+    const turnId = turnIdsForDay[0];
+    // --- FIN DE LA CORRECCIÓN ---
 
     if (turnId === 'REST') {
         return { name: 'Descanso', color: '#f0f2f5', startTime: '', endTime: '', isPaid: false };
     } else {
         const foundShift = shifts.find(s => s.id === Number(turnId));
-        // Devolvemos una copia para evitar modificar el original por accidente.
         return foundShift ? { ...foundShift } : { name: 'TURNO BORRADO', color: '#ff8fa3' };
     }
 }
+
 
 // --- FUNCIÓN PARA COMPROBAR SI UNA FECHA ESTÁ EN VACACIONES ---
 function isDateOnVacation(date) {
@@ -548,42 +614,111 @@ function renderShiftsList() {
     });
 }
 
-
-// --- FUNCIONES PARA GUARDAR Y CARGAR EN localStorage ---
-
-// --- FUNCIÓN PARA RELLENAR EL FORMULARIO DE CUADRANTE ---
-function populateQuadrantForm(weekCount) {
-    const weekPatternSelector = document.getElementById('week-pattern-selector');
-    weekPatternSelector.innerHTML = ''; // Limpiamos el contenido
+/**
+ * Dibuja la interfaz para editar los patrones de un cuadrante.
+ * Versión final que soluciona el error de renderizado y el de 'appendChild'.
+ */
+function populateQuadrantForm(weekCount, quadrantData = null) {
+    const patternContainer = document.getElementById('week-pattern-container');
+    patternContainer.innerHTML = '';
     const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-    // Hacemos un bucle para cada semana que necesitemos dibujar
-    for (let i = 0; i < weekCount; i++) {
-        // Añadimos un título para cada semana
-        const weekTitle = document.createElement('h3');
-        weekTitle.textContent = `Semana ${i + 1}`;
-        weekPatternSelector.appendChild(weekTitle);
+    let optionsHTML = '<option value="REST">Descanso</option>';
+    shifts.forEach(shift => {
+        optionsHTML += `<option value="${shift.id}">${shift.name}</option>`;
+    });
 
+    for (let i = 0; i < weekCount; i++) {
+        const weekBlock = document.createElement('div');
+		weekBlock.classList.add('week-block');
+        weekBlock.innerHTML = `<h3>Semana ${i + 1}</h3>`;
+        
         daysOfWeek.forEach(day => {
             const dayRow = document.createElement('div');
-            dayRow.classList.add('week-day-pattern');
+            dayRow.classList.add('day-pattern-row');
+            
+            // --- CORRECCIÓN CLAVE ---
+            // Primero, creamos la estructura interna de la fila del día.
+            dayRow.innerHTML = `
+                <div class="day-label ${day === 'Domingo' ? 'sunday-text' : ''}">${day}</div>
+                <div class="turn-entries"></div>
+            `;
+            // --- FIN DE LA CORRECCIÓN ---
 
-            // Creamos las opciones del selector: "Descanso" + los turnos creados
-            let optionsHTML = '<option value="REST">Descanso</option>';
-            shifts.forEach(shift => {
-                optionsHTML += `<option value="${shift.id}">${shift.name}</option>`;
+            const turnEntriesContainer = dayRow.querySelector('.turn-entries');
+            const turnIdsForDay = (quadrantData && quadrantData.patterns[i]) ? quadrantData.patterns[i][day.toLowerCase()] : ['REST'];
+
+            const selectsToFill = turnIdsForDay.map((turnId, index) => {
+                const turnEntry = document.createElement('div');
+                turnEntry.classList.add('turn-entry');
+
+                const select = document.createElement('select');
+                select.classList.add('turn-select');
+                select.dataset.week = i;
+                select.dataset.day = day.toLowerCase();
+                select.innerHTML = optionsHTML;
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                if (index === 0) {
+                    const isRestOnly = turnIdsForDay.length === 1 && turnIdsForDay[0] === 'REST';
+                    button.classList.add('add-turn-btn');
+                    if (isRestOnly) button.classList.add('hidden');
+                    button.textContent = '+';
+                } else {
+                    button.classList.add('remove-turn-btn');
+                    button.textContent = '-';
+                }
+                
+                turnEntry.appendChild(select);
+                turnEntry.appendChild(button);
+                turnEntriesContainer.appendChild(turnEntry); // Ahora sí encuentra el contenedor
+                
+                return { selectElement: select, value: turnId };
             });
 
-				dayRow.innerHTML = `
-					<label class="${day === 'Domingo' ? 'sunday-text' : ''}">${day}</label>
-					<select data-week="${i}" data-day="${day.toLowerCase()}">
-						${optionsHTML}
-					</select>
-				`;
-            weekPatternSelector.appendChild(dayRow);
+            setTimeout(() => {
+                selectsToFill.forEach(item => {
+                    item.selectElement.value = item.value;
+                });
+            }, 0);
+            
+            weekBlock.appendChild(dayRow);
         });
+        patternContainer.appendChild(weekBlock);
     }
 }
+
+
+
+
+/**
+ * Revisa el primer turno de un día y oculta el botón '+' si es "Descanso".
+ * @param {HTMLElement} dayRow - El elemento div que contiene todo el día.
+ */
+function updateAddButtonVisibility(dayRow) {
+    const addButton = dayRow.querySelector('.add-turn-btn');
+    const firstSelect = dayRow.querySelector('.turn-select');
+
+    if (addButton && firstSelect) {
+        // Si el valor del primer selector es "Descanso", ocultamos el botón.
+        if (firstSelect.value === 'REST') {
+            addButton.classList.add('hidden');
+        } else {
+            // Si no, nos aseguramos de que sea visible.
+            addButton.classList.remove('hidden');
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 
 // --- FUNCIONES PARA GUARDAR Y CARGAR EN localStorage ---
 
@@ -914,10 +1049,21 @@ function renderQuadrantSummary() {
 
         // --- LÓGICA MODIFICADA PARA QUINCENAS ---
         // Ahora comprueba si las horas bisemanales superan el límite de 95.
-        let biweeksSummaryHTML = biweeklyHours.map((hours, index) => {
-            const limitClass = hours > BIWEEKLY_HOUR_LIMIT ? 'over-limit' : '';
-            return `<li>B${index + 1}: <strong class="${limitClass}">${hours.toFixed(2)}H</strong></li>`;
-        }).join('');
+let biweeksSummaryHTML = biweeklyHours.map((hours, index) => {
+    const limitClass = hours > BIWEEKLY_HOUR_LIMIT ? 'over-limit' : '';
+
+    // --- LÓGICA NUEVA PARA EL TEXTO ---
+    // Calculamos los números de las semanas que se están sumando.
+    const week1Num = index + 1;
+    // El truco del '%' (módulo) nos da la siguiente semana de forma circular.
+    const week2Num = ((index + 1) % numWeeks) + 1;
+
+    // Construimos el nuevo texto detallado.
+    const summaryText = `S${week1Num}+S${week2Num}=`;
+
+    return `<li>${summaryText} <strong class="${limitClass}">${hours.toFixed(2)}H</strong></li>`;
+    // --- FIN DE LA LÓGICA NUEVA ---
+}).join('');
 
         const quadrantCard = document.createElement('div');
         quadrantCard.classList.add('summary-card');
@@ -1533,10 +1679,26 @@ backToSettingsFromQuadrantButton.addEventListener('click', () => {
     settingsView.classList.remove('hidden');
 });
 
-// Evento para el botón "+ Añadir nuevo cuadrante"
+/**
+ * Gestiona el clic en el botón "+ Añadir nuevo cuadrante".
+ * Limpia el formulario y lo prepara para crear un cuadrante desde cero.
+ */
 addNewQuadrantButton.addEventListener('click', () => {
-    // Leemos el valor por defecto (3) del campo y dibujamos ese número de semanas
-    populateQuadrantForm(quadrantWeeksInput.value); // <-- LÍNEA MODIFICADA
+    // 1. Limpiamos todos los campos del formulario (fecha, semanas, etc.).
+    quadrantForm.reset();
+
+    // 2. Nos aseguramos de que el campo oculto del ID esté vacío.
+    // Esto es crucial para que el botón "Guardar" sepa que estamos creando, no editando.
+    document.getElementById('quadrant-id-input').value = '';
+
+    // 3. Restauramos el título original del formulario.
+    document.getElementById('quadrant-form-title').textContent = 'Añadir Cuadrante';
+
+    // 4. Llamamos a nuestra "fábrica" y le pasamos 'null' para indicarle
+    // explícitamente que queremos un formulario vacío.
+    populateQuadrantForm(quadrantWeeksInput.value, null);
+
+    // 5. Finalmente, mostramos la pantalla del formulario, ahora limpia.
     quadrantListView.classList.add('hidden');
     quadrantFormView.classList.remove('hidden');
 });
@@ -1560,73 +1722,75 @@ quadrantWeeksInput.addEventListener('input', () => {
 // --- 12. LÓGICA DEL FORMULARIO DE CUADRANTE ---
 // ********************************************************************************************************************************************************************************************************************************************
 
-const quadrantForm = document.getElementById('quadrant-form');
+/**
+ * Gestiona el guardado del formulario de cuadrantes.
+ * Ahora sabe leer y almacenar múltiples turnos por día.
+ */
 quadrantForm.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    // --- INICIO DE LA VALIDACIÓN ---
     const startDateValue = document.getElementById('quadrant-start-date').value;
     const quadrantId = document.getElementById('quadrant-id-input').value;
 
-    // Buscamos si algún OTRO cuadrante ya usa la misma fecha de inicio.
-    // La condición 'quad.id !== Number(quadrantId)' es para ignorar el cuadrante que estamos editando.
+    // --- Validación de fecha duplicada (se mantiene igual) ---
     const isDuplicateDate = quadrants.some(
         quad => quad.startDate === startDateValue && quad.id !== Number(quadrantId)
     );
 
-    // Si encontramos una fecha duplicada, mostramos un aviso y paramos.
     if (isDuplicateDate) {
         alert('¡Atención! Ya existe otro cuadrante que empieza en la misma fecha. Por favor, elige otra.');
-        return; // Detenemos el proceso de guardado aquí mismo.
+        return;
     }
-    // --- FIN DE LA VALIDACIÓN ---
-
-    // (El resto del código de guardado sigue igual)
+    
+    // --- NUEVA LÓGICA PARA LEER MÚLTIPLES TURNOS ---
     const weekCount = quadrantWeeksInput.value;
     const patterns = [];
+    const daysOfWeek = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 
+    // Recorremos cada bloque de semana del formulario.
     for (let i = 0; i < weekCount; i++) {
         const weekPattern = {};
-        const weekSelectors = quadrantForm.querySelectorAll(`#week-pattern-selector select[data-week="${i}"]`);
-        weekSelectors.forEach(select => {
-            weekPattern[select.dataset.day] = select.value;
+        
+        // Para cada semana, recorremos cada día.
+        daysOfWeek.forEach(day => {
+            // Buscamos TODOS los <select> de este día y esta semana.
+            const daySelects = document.querySelectorAll(`.turn-select[data-week="${i}"][data-day="${day}"]`);
+            
+            // Creamos una lista con los IDs de los turnos seleccionados.
+            const turnIdsForDay = Array.from(daySelects).map(select => select.value);
+            
+            // Guardamos la lista de turnos para ese día.
+            weekPattern[day] = turnIdsForDay;
         });
         patterns.push(weekPattern);
     }
 
+
     const quadrantData = {
         startDate: startDateValue,
         weeks: weekCount,
-        patterns: patterns
+        patterns: patterns // 'patterns' ahora contiene la nueva estructura.
     };
 
+    // --- Lógica de guardado (se mantiene igual) ---
     if (quadrantId) {
-        // MODO EDICIÓN
-        quadrants = quadrants.map(quad => {
-            if (quad.id === Number(quadrantId)) {
-                return { ...quad, ...quadrantData };
-            }
-            return quad;
-        });
+        quadrants = quadrants.map(quad => (quad.id === Number(quadrantId) ? { ...quad, ...quadrantData } : quad));
     } else {
-        // MODO AÑADIR
         const newQuadrant = { id: Date.now(), ...quadrantData };
         quadrants.push(newQuadrant);
     }
 
     saveQuadrants();
     renderQuadrantsList();
-    renderCalendar(); 
-	
-	
+    renderCalendar();
+    
+    // Reseteamos y ocultamos el formulario.
     quadrantForm.reset();
     document.getElementById('quadrant-id-input').value = '';
     document.getElementById('quadrant-form-title').textContent = 'Añadir Cuadrante';
-
     quadrantFormView.classList.add('hidden');
     quadrantListView.classList.remove('hidden');
 });
-
 
 // ********************************************************************************************************************************************************************************************************************************************
 // --- 13. LÓGICA PARA EDITAR Y ELIMINAR CUADRANTES ---
@@ -1649,37 +1813,30 @@ allQuadrantsList.addEventListener('click', (event) => {
         saveQuadrants();
         renderQuadrantsList();
 		renderCalendar(); 
-    } else if (event.target.classList.contains('edit')) {
-        // --- LÓGICA DE EDICIÓN ---
-        const quadrantIdToEdit = Number(event.target.dataset.quadrantId);
-        const quadrantToEdit = quadrants.find(q => q.id === quadrantIdToEdit);
 
-        if (quadrantToEdit) {
-            // Rellenamos los campos básicos del formulario
-            document.getElementById('quadrant-id-input').value = quadrantToEdit.id;
-            document.getElementById('quadrant-start-date').value = quadrantToEdit.startDate;
-            quadrantWeeksInput.value = quadrantToEdit.weeks;
+} else if (event.target.classList.contains('edit')) {
+    // --- LÓGICA DE EDICIÓN (VERSIÓN CORREGIDA) ---
+    const quadrantIdToEdit = Number(event.target.dataset.quadrantId);
+    const quadrantToEdit = quadrants.find(q => q.id === quadrantIdToEdit);
 
-            // Generamos la estructura de selectores para el número de semanas correcto
-            populateQuadrantForm(quadrantToEdit.weeks);
+    if (quadrantToEdit) {
+        // Rellenamos los campos básicos del formulario.
+        document.getElementById('quadrant-id-input').value = quadrantToEdit.id;
+        document.getElementById('quadrant-start-date').value = quadrantToEdit.startDate;
+        quadrantWeeksInput.value = quadrantToEdit.weeks;
 
-            // Ahora, seleccionamos los turnos guardados en cada selector
-            quadrantToEdit.patterns.forEach((weekPattern, weekIndex) => {
-                for (const day in weekPattern) {
-                    const selector = document.querySelector(`select[data-week="${weekIndex}"][data-day="${day}"]`);
-                    if (selector) {
-                        selector.value = weekPattern[day];
-                    }
-                }
-            });
+        // --- LA CLAVE ESTÁ AQUÍ ---
+        // Llamamos a nuestra nueva "fábrica" y le pasamos los datos del cuadrante.
 
-            // Cambiamos el título y mostramos el formulario
-            document.getElementById('quadrant-form-title').textContent = 'Editar Cuadrante';
-            quadrantListView.classList.add('hidden');
-            quadrantFormView.classList.remove('hidden');
-        }
+	   populateQuadrantForm(quadrantToEdit.weeks, quadrantToEdit);
 
+        // Cambiamos el título y mostramos el formulario.
+        document.getElementById('quadrant-form-title').textContent = 'Editar Cuadrante';
+        quadrantListView.classList.add('hidden');
+        quadrantFormView.classList.remove('hidden');
     }
+}
+
 });
 
 // Añadimos un "oyente" también para los botones del cuadrante activo
@@ -1707,8 +1864,10 @@ activeQuadrantDisplay.addEventListener('click', (event) => {
             document.getElementById('quadrant-id-input').value = quadrantToEdit.id;
             document.getElementById('quadrant-start-date').value = quadrantToEdit.startDate;
             quadrantWeeksInput.value = quadrantToEdit.weeks;
-            populateQuadrantForm(quadrantToEdit.weeks);
-            quadrantToEdit.patterns.forEach((weekPattern, weekIndex) => {
+            
+			populateQuadrantForm(quadrantToEdit.weeks, quadrantToEdit);
+            
+			quadrantToEdit.patterns.forEach((weekPattern, weekIndex) => {
                 for (const day in weekPattern) {
                     const selector = document.querySelector(`select[data-week="${weekIndex}"][data-day="${day}"]`);
                     if (selector) { selector.value = weekPattern[day]; }
@@ -1734,6 +1893,97 @@ function isColorDark(hexColor) {
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance < 0.5;
 }
+
+
+
+
+
+
+
+
+// ===============================================================
+// --- LÓGICA PARA AÑADIR/QUITAR TURNOS EN EL CUADRANTE ---
+// ===============================================================
+
+/**
+ * Gestiona los clics en los botones '+' y '-' del editor de cuadrantes.
+ */
+weekPatternContainer.addEventListener('click', (event) => {
+    const target = event.target;
+
+// --- Lógica para el botón AÑADIR (+) ---
+if (target.classList.contains('add-turn-btn')) {
+    const turnEntriesContainer = target.closest('.turn-entries');
+    
+    // --- LÓGICA CORREGIDA ---
+    // 1. Buscamos el primer <select> para saber de qué día y semana estamos hablando.
+    const firstSelect = turnEntriesContainer.querySelector('.turn-select');
+    const week = firstSelect.dataset.week;
+    const day = firstSelect.dataset.day;
+
+    // 2. Creamos la nueva fila de entrada.
+    const newTurnEntry = document.createElement('div');
+    newTurnEntry.classList.add('turn-entry');
+
+    // 3. Creamos el nuevo <select> y lo rellenamos.
+    const newSelect = document.createElement('select');
+    newSelect.classList.add('turn-select');
+    // Le añadimos las "etiquetas" que faltaban.
+    newSelect.dataset.week = week;
+    newSelect.dataset.day = day;
+
+    let optionsHTML = '<option value="REST">Descanso</option>';
+    shifts.forEach(shift => {
+        optionsHTML += `<option value="${shift.id}">${shift.name}</option>`;
+    });
+    newSelect.innerHTML = optionsHTML;
+
+    // 4. Creamos el botón de eliminar (-).
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.classList.add('remove-turn-btn');
+    removeButton.textContent = '-';
+    
+    // 5. "Montamos" la nueva fila y la añadimos.
+    newTurnEntry.appendChild(newSelect);
+    newTurnEntry.appendChild(removeButton);
+    turnEntriesContainer.appendChild(newTurnEntry);
+}
+	
+	
+
+// --- Lógica para el botón QUITAR (-) ---
+if (target.classList.contains('remove-turn-btn')) {
+    const turnEntryToRemove = target.closest('.turn-entry');
+    if (turnEntryToRemove) {
+        const dayRow = target.closest('.day-pattern-row'); // Guardamos la referencia al día
+        turnEntryToRemove.remove(); // Eliminamos la fila
+
+    }
+}
+	
+	
+});
+
+
+weekPatternContainer.addEventListener('change', (event) => {
+    if (event.target.classList.contains('turn-select')) {
+        // Buscamos la fila del día entero.
+        const dayRow = event.target.closest('.day-pattern-row');
+        // Y llamamos a nuestra herramienta para que revise.
+        updateAddButtonVisibility(dayRow);
+    }
+});
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1828,7 +2078,7 @@ function renderOvertimeList() {
     } else {
         overtimeRates.forEach(rate => {
             const rateItem = document.createElement('div');
-            rateItem.classList.add('rate-item');
+		  rateItem.classList.add('rate-item', 'quadrant-item');
             rateItem.innerHTML = `
                 <div class="rate-content">
                     <span class="rate-name">${rate.name}</span>
@@ -1865,7 +2115,7 @@ addNewOvertimeButton.addEventListener('click', () => {
     if (emptyMessage) emptyMessage.remove();
 
     const editItem = document.createElement('div');
-    editItem.classList.add('rate-item', 'rate-item-edit');
+   editItem.classList.add('rate-item', 'rate-item-edit', 'quadrant-item');
     editItem.innerHTML = `
         <div class="rate-content-edit">
             <input type="text" class="inline-input" placeholder="Nombre de tarifa">
@@ -2004,7 +2254,7 @@ shiftIsPaidCheckbox.addEventListener('change', () => {
 const vacationsListView = document.getElementById('vacations-list-view');
 const backToSettingsFromVacationsButton = document.getElementById('back-to-settings-from-vacations-button');
 const addNewVacationButton = document.getElementById('add-new-vacation-button');
-const vacationsListContainer = document.getElementById('vacations-list-container');
+
 const vacationFormView = document.getElementById('vacation-form-view');
 const vacationForm = document.getElementById('vacation-form');
 const cancelVacationFormButton = document.getElementById('cancel-vacation-form-button');
@@ -2415,180 +2665,149 @@ let currentEditingDate = null; // Variable para recordar qué día estamos viend
 
 
 
-// --- Función para abrir y rellenar la modal (VERSIÓN CON PRIORIDAD CORREGIDA) ---
+/**
+ * Abre y rellena la ventana modal con la información del día,
+ * respetando la jerarquía de prioridades (Edición > Vacaciones > Cuadrante).
+ */
 function openDayModal(dateStr) {
     currentEditingDate = dateStr;
     const date = new Date(dateStr + 'T00:00:00');
-    
+
+    // --- Elementos de la UI ---
     const modalHeader = dayModal.querySelector('.modal-header');
     const modalClosureSummary = document.getElementById('modal-closure-summary');
-    
-    // --- Reseteo de la Modal ---
-    modalClosureSummary.classList.add('hidden');
-    modalHeader.classList.remove('closure-day');
-    modalHeader.classList.remove('earnings-day');
-    modalHeader.classList.remove('today-day');
-    
-    //dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-const holidayName = isHoliday(date);
-    const holidayNameDisplay = document.getElementById('modal-holiday-name');
-
-    // Reseteamos el indicador de festivo.
-    holidayNameDisplay.classList.add('hidden');
-
-    // Rellenamos el título con la fecha.
-    dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
-    // Si encontramos un nombre de festivo, lo mostramos.
-    if (holidayName) {
-        holidayNameDisplay.textContent = holidayName;
-        holidayNameDisplay.classList.remove('hidden');
-    }
-
-
-	  
-	// --- Rellenamos el título y comprobamos si es festivo ---
-const dateDisplay = dayModal.querySelector('#modal-date');
-let dateText = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-// Si la función detective nos dice que es un festivo...
-if (isHoliday(date)) {
-    // ...añadimos un pequeño texto de aviso al lado de la fecha.
-   
-}
-
-// Usamos .innerHTML para que pueda interpretar la etiqueta <span> que hemos añadido.
-dateDisplay.innerHTML = dateText;  
-	  
-
-
-    const turn = getTurnForDate(date);
-    const onVacation = isDateOnVacation(date);
-    const dayNote = dayNotes[dateStr] || {};
-
+    const shiftListContainer = document.getElementById('modal-shift-list-container');
+    const totalHoursDisplay = document.getElementById('modal-total-hours');
+    const earningsDisplay = document.getElementById('modal-earnings');
     const shiftCommentsDisplay = dayModal.querySelector('#modal-shift-comments-display');
     const dailyCommentsDisplay = dayModal.querySelector('#modal-daily-comments-display');
+
+    // --- Reseteo de la Modal ---
+    modalClosureSummary.classList.add('hidden');
+    modalHeader.classList.remove('closure-day', 'earnings-day', 'today-day');
+    shiftListContainer.innerHTML = '';
     shiftCommentsDisplay.style.display = 'none';
     dailyCommentsDisplay.style.display = 'none';
+    totalHoursDisplay.textContent = '0.00 H';
+    earningsDisplay.textContent = '0.00€';
 
-    // Rellenamos la sección de "Modo Vista"
-    if (onVacation) {
-        dayModal.querySelector('#modal-shift-name').textContent = 'Vacaciones';
-        dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
-        dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
-        dayModal.querySelector('#modal-earnings').textContent = 'N/A';
-        dailyCommentsDisplay.textContent = 'Periodo de vacaciones.';
-        dailyCommentsDisplay.style.display = 'block';
-    } else if (turn) {
-        dayModal.querySelector('#modal-shift-name').textContent = turn.name;
-        dayModal.querySelector('#modal-shift-time').textContent = turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : 'Sin horario';
-        dayModal.querySelector('#modal-total-hours').textContent = calculateTotalHours(turn.startTime, turn.endTime);
-       
-        // --- LÍNEA CORREGIDA ---
-        // Ahora le pasamos la 'date' a la función de cálculo.
-        dayModal.querySelector('#modal-earnings').textContent = calculateEarnings(turn, date);
-	
+    // Rellenamos el título y comprobamos si es festivo.
+    const holidayName = isHoliday(date);
+    const holidayNameDisplay = document.getElementById('modal-holiday-name');
+    dayModal.querySelector('#modal-date').textContent = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    holidayNameDisplay.textContent = holidayName || '';
+    holidayNameDisplay.classList.toggle('hidden', !holidayName);
 
- 
-// --- Lógica para mostrar los comentarios (VERSIÓN ACTUALIZADA) ---
+    // --- Búsqueda de datos ---
+    const allTurnsForDay = getAllTurnsForDate(date);
+    const onVacation = isDateOnVacation(date);
+    const isOverridden = isDayOverridden(date);
+    const dayNote = dayNotes[dateStr] || {};
 
-// Primero, preparamos el texto para el comentario general del turno.
-let shiftCommentText = '';
-if (turn && turn.comments) {
-    shiftCommentText = ` ${turn.comments}`;
-}
+    let totalHours = 0;
+    let totalEarnings = 0;
+    let shiftCommentsHTML = '';
 
-// Ahora, comprobamos si hay horas extras para añadir un segundo mensaje.
-if (dayNote && dayNote.extraHours) {
-    // Si ya había un comentario de turno, añadimos un salto de línea para separar.
-    if (shiftCommentText !== '') {
-        shiftCommentText += '<br>'; 
+    // --- LÓGICA DE PRIORIDAD CORREGIDA ---
+
+    // 1. PRIMERO, comprobamos si son vacaciones Y el día NO ha sido editado manualmente.
+    if (onVacation && !isOverridden) {
+			//shiftListContainer.innerHTML = `<div class="shift-list-item"><span class="name">Vacaciones</span></div>`;
+			shiftListContainer.innerHTML = `<div class="shift-list-item vacation-day"><span class="name">Vacaciones</span></div>`;
+			
+        // Los totales se quedan en 0, como ya hemos reseteado.
+
+    // 2. SI NO, mostramos los turnos (ya sean del cuadrante o de una edición manual).
+    } else if (allTurnsForDay.length > 0) {
+        allTurnsForDay.forEach(turn => {
+            const turnHours = calculateTotalHours(turn.startTime, turn.endTime);
+            shiftListContainer.innerHTML += `
+                <div class="shift-list-item">
+                    <span class="name">${turn.name}</span>
+                    <span class="time">${turn.startTime && turn.endTime ? `${turn.startTime} - ${turn.endTime}` : ''}</span>
+                    <span class="hours">${turnHours !== 'N/A' ? `(${turnHours})` : ''}</span>
+                </div>
+            `;
+            const hours = parseFloat(turnHours);
+            if (!isNaN(hours)) totalHours += hours;
+            
+			const turnEarnings = parseFloat(calculateEarnings(turn, date, true)); // 'true' significa "solo turno"
+            if (!isNaN(turnEarnings)) totalEarnings += turnEarnings;
+            
+			if (turn.comments) shiftCommentsHTML += `<div>${turn.comments}</div>`;
+        });
+		
+// --- LÓGICA NUEVA: SUMAR LAS HORAS EXTRAS AL FINAL ---
+    // Buscamos las ganancias de las horas extra una sola vez, fuera del bucle.
+    const extraEarnings = parseFloat(calculateEarnings(null, date, false, true)); // 'true' significa "solo extras"
+    if (!isNaN(extraEarnings)) {
+        totalEarnings += extraEarnings;
     }
-    // Añadimos el texto de las horas extras.
-    shiftCommentText += `Horas extras añadidas: +${dayNote.extraHours.hours}H`;
-}
+    // --- FIN DE LA LÓGICA NUEVA ---		
+        
+        totalHoursDisplay.textContent = `${totalHours.toFixed(2)} H`;
+        earningsDisplay.textContent = `${totalEarnings.toFixed(2)}€`;
 
-// Si hemos generado algún texto para la sección de comentarios del turno, la mostramos.
-if (shiftCommentText !== '') {
-    shiftCommentsDisplay.textContent = shiftCommentText;
-    shiftCommentsDisplay.style.display = 'block';
-}
-
-// La lógica para el comentario específico del día se mantiene igual.
-if (dayNote.dailyComment) {
-    dailyCommentsDisplay.textContent = ` ${dayNote.dailyComment}`;
-    dailyCommentsDisplay.style.display = 'block';
-	shiftCommentsDisplay.innerHTML = shiftCommentText;
-}
-		
-		
-		
+    // 3. Si no hay nada, es un día libre.
     } else {
-        dayModal.querySelector('#modal-shift-name').textContent = 'Libre';
-        dayModal.querySelector('#modal-shift-time').textContent = 'Día completo';
-        dayModal.querySelector('#modal-total-hours').textContent = 'N/A';
-        dayModal.querySelector('#modal-earnings').textContent = 'N/A';
+        shiftListContainer.innerHTML = `<div class="shift-list-item"><span class="name">Libre</span></div>`;
     }
     
-    // Lógica de estilos de cabecera y resumen de cierre...
-    // (Esta parte ya la tienes bien, la incluimos para que la función esté completa)
+    // Lógica para mostrar comentarios
+    const originalTurn = getBaseTurnForDate(date);
+    if (originalTurn && originalTurn.comments && !onVacation) {
+        shiftCommentsDisplay.innerHTML = `<div>${originalTurn.comments}</div>`;
+        shiftCommentsDisplay.style.display = 'block';
+    }
+    if (dayNote.dailyComment) {
+        dailyCommentsDisplay.textContent = dayNote.dailyComment;
+        dailyCommentsDisplay.style.display = 'block';
+    }
+
+    // Lógica para colorear cabeceras y mostrar resumen de cierre (se mantiene igual)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (date.getTime() === today.getTime()) {
-        modalHeader.classList.add('today-day');
+    if (date.getTime() === today.getTime()) modalHeader.classList.add('today-day');
+    if (totalEarnings > 0) modalHeader.classList.add('earnings-day');
+    if (isShiftClosureDay(date)) {
+        modalHeader.classList.add('closure-day');
+        const prevClosureDate = getPreviousClosureDate(date);
+        if (prevClosureDate) {
+            const periodStartDate = new Date(prevClosureDate);
+            periodStartDate.setDate(periodStartDate.getDate() + 1);
+            const summary = calculatePeriodSummary(periodStartDate, date);
+            document.getElementById('modal-worked-days').textContent = summary.workedDays;
+            document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
+            // Lógica del desglose
+            const breakdownList = document.getElementById('earnings-breakdown-list');
+            breakdownList.innerHTML = '';
+            if (summary.earningsBreakdown.length > 0) {
+                summary.earningsBreakdown.forEach(item => {
+                    const formattedDate = item.date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('breakdown-item');
+                    listItem.innerHTML = `
+                        <span class="breakdown-date">${formattedDate}</span>
+                        <span class="breakdown-source">${item.source}</span>
+                        <span class="breakdown-amount">+${item.amount.toFixed(2)}€</span>
+                    `;
+                    breakdownList.appendChild(listItem);
+                });
+            } else {
+                breakdownList.innerHTML = '<li>No se registraron ganancias en este periodo.</li>';
+            }
+        } else {
+            document.getElementById('modal-worked-days').textContent = 'N/A';
+            document.getElementById('modal-total-earnings').textContent = 'N/A';
+            document.getElementById('earnings-breakdown-list').innerHTML = '<li>No se encontró un cierre anterior.</li>';
+        }
+        modalClosureSummary.classList.remove('hidden');
     }
-    const earningsValue = parseFloat(dayModal.querySelector('#modal-earnings').textContent);
-    if (!isNaN(earningsValue) && earningsValue > 0) {
-        modalHeader.classList.add('earnings-day');
-    }
-	if (isShiftClosureDay(date)) {
-		modalHeader.classList.add('closure-day');
-		const prevClosureDate = getPreviousClosureDate(date);
 
-		if (prevClosureDate) {
-			const periodStartDate = new Date(prevClosureDate);
-			periodStartDate.setDate(periodStartDate.getDate() + 1);
-
-			// 1. Obtenemos el resumen completo, que ahora incluye el desglose.
-			const summary = calculatePeriodSummary(periodStartDate, date);
-			
-			// 2. Rellenamos los totales como antes.
-			document.getElementById('modal-worked-days').textContent = summary.workedDays;
-			document.getElementById('modal-total-earnings').textContent = `${summary.totalEarnings.toFixed(2)}€`;
-
-			// --- NUEVO: "Pintamos" la lista de desglose ---
-			const breakdownList = document.getElementById('earnings-breakdown-list');
-			breakdownList.innerHTML = ''; // Limpiamos la lista.
-
-			if (summary.earningsBreakdown.length > 0) {
-				summary.earningsBreakdown.forEach(item => {
-					const formattedDate = item.date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-					const listItem = document.createElement('li');
-					listItem.classList.add('breakdown-item');
-					listItem.innerHTML = `
-						<span class="breakdown-date">${formattedDate}</span>
-						<span class="breakdown-source">${item.source}</span>
-						<span class="breakdown-amount">+${item.amount.toFixed(2)}€</span>
-					`;
-					breakdownList.appendChild(listItem);
-				});
-			} else {
-				breakdownList.innerHTML = '<li>No se registraron ganancias en este periodo.</li>';
-			}
-
-		} else {
-			document.getElementById('modal-worked-days').textContent = 'N/A';
-			document.getElementById('modal-total-earnings').textContent = 'N/A';
-			document.getElementById('earnings-breakdown-list').innerHTML = '<li>No se encontró un cierre anterior.</li>';
-		}
-		
-		modalClosureSummary.classList.remove('hidden');
-	}
-    
     switchToViewMode();
     dayModal.classList.remove('hidden');
 }
+
 
 // --- Función para cambiar a Modo Edición ---
 /**
@@ -2930,14 +3149,14 @@ function calculatePeriodSummary(startDate, endDate) {
     return { workedDays, totalEarnings, earningsBreakdown };
 }
 
-
 /**
  * Calcula el total de horas para cada semana de un patrón de cuadrante.
+ * VERSIÓN ACTUALIZADA: Ahora sabe sumar múltiples turnos por día.
  * @param {object} quadrant - El objeto del cuadrante que se quiere analizar.
- * @returns {Array<number>} - Una lista con el total de horas de cada semana. Ej: [40, 32, 40]
+ * @returns {Array<number>} - Una lista con el total de horas de cada semana.
  */
 function calculateQuadrantWeeklyHours(quadrant) {
-    const weeklyHours = []; // Aquí guardaremos los totales de cada semana.
+    const weeklyHours = [];
 
     // Recorremos cada patrón de semana que tenga el cuadrante.
     quadrant.patterns.forEach(weekPattern => {
@@ -2945,17 +3164,25 @@ function calculateQuadrantWeeklyHours(quadrant) {
 
         // Recorremos cada día de esa semana (lunes, martes, etc.).
         for (const day in weekPattern) {
-            const turnId = weekPattern[day];
+            // Obtenemos la LISTA de IDs de turno para ese día.
+            const turnIdsForDay = weekPattern[day];
 
-            // Si el turno no es 'Descanso', buscamos su información.
-            if (turnId !== 'REST') {
-                const turn = shifts.find(s => s.id === Number(turnId));
-                // Si encontramos el turno y tiene horas definidas...
-                if (turn && turn.startTime && turn.endTime) {
-                    const hoursString = calculateTotalHours(turn.startTime, turn.endTime);
-                    totalHoursOfWeek += parseFloat(hoursString) || 0; // Sumamos las horas
-                }
+            // --- LÓGICA CORREGIDA ---
+            // Nos aseguramos de que es una lista y la recorremos.
+            if (Array.isArray(turnIdsForDay)) {
+                // Por cada ID de turno en la lista...
+                turnIdsForDay.forEach(turnId => {
+                    if (turnId !== 'REST') {
+                        const turn = shifts.find(s => s.id === Number(turnId));
+                        if (turn && turn.startTime && turn.endTime) {
+                            // ...calculamos sus horas y las sumamos al total de la semana.
+                            const hoursString = calculateTotalHours(turn.startTime, turn.endTime);
+                            totalHoursOfWeek += parseFloat(hoursString) || 0;
+                        }
+                    }
+                });
             }
+            // --- FIN DE LA CORRECCIÓN ---
         }
         // Añadimos el total de la semana a nuestra lista de resultados.
         weeklyHours.push(totalHoursOfWeek);

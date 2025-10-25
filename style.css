@@ -103,11 +103,12 @@ body {
 
 #calendar-grid {
     display: grid;
-    /* Crea 7 columnas de igual tamaño */
-    grid-template-columns: repeat(7, 1fr); 
-    gap: 1px; /* Pequeña separación entre celdas */
-    background-color: #e0e0e0; /* Color de la separación */
-    border-top: 1px solid #e0e0e0; /* Línea superior */
+    grid-template-columns: repeat(7, 1fr);
+
+    /* --- ESTOS SON LOS CAMBIOS CLAVE --- */
+    gap: 5px; /* 1. Aumentamos la separación entre las celdas */
+    padding: 5px; /* Añadimos un pequeño margen interior */
+    background-color: #f0f2f5; /* El color de fondo que se verá en la separación */
 }
 
 
@@ -376,10 +377,40 @@ body {
     padding-bottom: 10px;
     color: #333;
 	text-align: center;
+	font-size:1.2em important ;
 }
 
+/* Estilo para la sección de "Todos los Cuadrantes"
 .quadrant-list-section {
     margin-top: 30px;
+    background-color: #eaf4ff; 
+    border: 1px solid #cce1ff;
+    border-radius: 8px;
+    padding: 20px;
+	font-size: 0.8em;
+} */
+
+
+/* --- Estilo Genérico para Secciones de Listas --- */
+
+/* 1. Estilo común para todas las secciones (fondo azul, bordes, etc.) */
+.content-section {
+    background-color: #eaf4ff;
+    border: 1px solid #cce1ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px; /* Margen para separar */
+}
+
+/* 2. Estilo para los títulos dentro de estas secciones */
+.content-section h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    color: #333;
+    text-align: center;
+	font-size:1.2em
 }
 
 
@@ -387,36 +418,50 @@ body {
 /* --- ESTILOS PARA EL FORMULARIO DE CUADRANTE (PANTALLA 6) --- */
 /* =============================================================== */
 
-/* Contenedor para la lista de Lunes a Domingo */
-#week-pattern-selector {
-    display: flex;
-    flex-direction: column; /* Apila los días verticalmente */
-    gap: 15px; /* Espacio entre cada día */
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 5px;
-    border: 1px solid #eee;
-}
-
-/* Estilo para cada fila (ej: "Lunes" + selector) */
-.week-day-pattern {
+/* --- Nuevo Diseño para el Editor de Cuadrantes --- */
+.day-pattern-row {
     display: flex;
     align-items: center;
-    gap: 15px; /* Espacio entre el nombre del día y el selector */
+    margin-bottom: 15px;
 }
-
-.week-day-pattern label {
+.day-label {
     font-weight: bold;
-    width: 90px; /* Ancho fijo para el nombre del día, para que todo esté alineado */
+    width: 90px;
+}
+.turn-entries {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.week-day-pattern select {
-    flex-grow: 1; /* El selector ocupa todo el espacio restante */
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: white;
+/* Estilo para cada fila de turno (Mañana [v] [+]) */
+.turn-entry {
+    display: flex;       /* Pone el select y el botón en una fila */
+    align-items: center; /* Los centra verticalmente */
+    width: 100%;         /* Asegura que la fila ocupe todo el ancho disponible */
 }
+
+/* Forzamos al <select> a tener un ancho calculado y fijo */
+.turn-entry select {
+    /* Ocupa el 100% del espacio MENOS 38px (el ancho del botón + el espacio) */
+    width: calc(100% - 38px);
+    margin-right: 10px; /* Creamos un espacio fijo a la derecha para el botón */
+}
+
+
+
+.add-turn-btn, .remove-turn-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+}
+
 
 /* Centrar los textos de los campos que están en línea */
 .form-group-inline .form-group label {
@@ -446,7 +491,7 @@ body {
 }
 
 .quadrant-date {
-    font-size: 1.1em;
+    font-size: 1.em;
     color: #757;
 	text-align: center;
 }
@@ -467,35 +512,35 @@ body {
 
 /* --- Estilos CORREGIDOS para la sección de Cuadrante Activo --- */
 
-/* Contenedor principal (el de fondo azul) */
+/* Contenedor principal (el de fondo azul) 
 .active-quadrant-section {
     background-color: #eaf4ff;
     border: 1px solid #cce1ff;
     border-radius: 8px;
     padding: 20px;
     margin-top: 20px;
-    /* Nuevas propiedades para centrar todo su contenido */
+    
     display: flex;
     flex-direction: column;
     align-items: center;
-}
+}*/
 
 /* La tarjeta blanca con la información del cuadrante */
 .quadrant-info-card {
     background-color: white; /* <-- El fondo blanco que faltaba */
     border-radius: 8px;
-    padding: 15px 20px;
+    padding: 10px 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: center;
     
     width: 100%; /* Ocupa el ancho del contenedor azul */
-    max-width: 400px; /* Un tope para que no sea demasiado ancha */
+    max-width: 4000px; /* Un tope para que no sea demasiado ancha */
     margin-bottom: 15px; /* Espacio antes del título de "Todos los cuadrantes" */
 }
 
 /* Título dentro de la tarjeta */
 .quadrant-info-card .quadrant-title {
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: bold;
     color: #333;
     margin-bottom: 5px;
@@ -503,8 +548,9 @@ body {
 
 /* Fecha dentro de la tarjeta */
 .quadrant-info-card .quadrant-date {
-    font-size: 1.2em;
+    font-size: 1m;
     color: #666;
+	margin-right: 12px;
 }
 
 /* Contenedor de los botones de Editar/Eliminar */
@@ -542,14 +588,14 @@ body {
 
 
 /* Estilos para la fila en modo edición */
+/* Estilos para la fila en modo edición (con fondo corregido) */
 .rate-item-edit {
-    background-color: #eaf4ff;
+    background-color: white; /* <-- ESTE ES EL CAMBIO CLAVE */
     border-radius: 8px;
     padding: 20px 15px;
-    /* --- Propiedades Modificadas --- */
-    flex-direction: column; /* Apila los elementos en vertical (inputs arriba, botones abajo) */
-    align-items: center;    /* Centra los grupos horizontalmente */
-    gap: 20px;              /* Espacio entre la fila de inputs y la de botones */
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
 }
 
 /* Contenedor de las cajas de texto (nombre y precio) */
@@ -1253,7 +1299,6 @@ input:checked + .slider:before {
 
 
 
-
 /* =============================================================== */
 /* --- CENTRADO GLOBAL DE BOTONES --- */
 /* =============================================================== */
@@ -1267,7 +1312,7 @@ input:checked + .slider:before {
 .active-quadrant-buttons {
     display: flex;
     justify-content: center; /* ¡La propiedad clave para centrar! */
-    width: 100%;             /* Asegura que el contenedor ocupe todo el ancho */
+     /* Asegura que el contenedor ocupe todo el ancho */
     gap: 15px;               /* Un espaciado consistente entre botones */
 }
 
@@ -1432,15 +1477,18 @@ input:checked + .slider:before {
 /* Estilo específico para el botón de Cerrar Sesión */
 #logout-menu-button {
 	border-top: 2px solid #e0e0e0; 
-	padding: 15px;
-}
+	padding: 12px;
 
-#logout-menu-button:hover {
     background-color: #ffced3; /* Un poco más oscuro al pasar el ratón */
     border-color: #ffb1b8;
 }
 
+/* Añadir el mismo margen lateral de los cuadrantes a la sección de vacaciones */
 
+#overtime-list-view .explanation-text, #vacations-list-view .explanation-text {
+    margin-left: 20px;
+    margin-right: 20px;
+}
 
 /* =============================================================== */
 /* --- NUEVO DISEÑO DEL MENÚ DE AJUSTES (TARJETAS) --- */
@@ -1625,11 +1673,15 @@ input:checked + .slider:before {
  */
 .day-cell {
     display: flex;
-    flex-direction: column; /* Apila las 3 filas verticalmente */
+    flex-direction: column;
     min-height: 100px;
     background-color: white;
     overflow: hidden;
-    color: #333; /* Color de texto por defecto */
+    color: #333;
+
+    /* --- ESTOS SON LOS CAMBIOS CLAVE --- */
+    border-radius: 8px; /* 2. Redondeamos las esquinas */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* 3. Añadimos una sombra sutil */
 }
 
 /**
@@ -1650,14 +1702,17 @@ input:checked + .slider:before {
  */
 .day-shift-name {
     display: flex;
-    justify-content: center; /* Centra el texto */
+    flex-direction: column; /* <-- Pone los elementos uno debajo del otro */
+    justify-content: center;
     align-items: center;
     font-size: 0.9em;
     font-weight: 500;
-    border-bottom: 1px solid #f0f0f0; /* La segunda línea fina */
-    flex: 1; /* Ocupa 1/3 del espacio */
+    border-bottom: 1px solid #f0f0f0;
+    flex: 1;
     padding: 2px;
+    line-height: 1.2; /* Ajusta el espacio entre líneas */
 }
+
 
 /**
  * Las horas del turno, en la fila de abajo.
@@ -1666,12 +1721,11 @@ input:checked + .slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 0.8em;
+    font-size: 0.7em; /* <-- La clave: Letra un 20% más pequeña */
     color: #666;
     flex: 1;
-    line-height: 1.2; 
-	padding: 4px 0;
-	
+    line-height: 1; 
+    padding: 4px 0;
 }
 
 .day-number {
@@ -1723,8 +1777,230 @@ input:checked + .slider:before {
     padding-left: 0; /* <-- AÑADE ESTA LÍNEA */
 }
 
+
+
+.explanation-text.warning {
+    background-color: #eaf4ff;
+    border: 1px solid #cce1ff;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+
+
 /* Borde azul para destacar la casilla del día actual (no afecta al tamaño) */
 .day-cell.today-cell {
     outline: 3px solid #4a90e2;
     outline-offset: -3px; /* Dibuja el borde "hacia adentro" */
 }
+
+
+
+
+/* Estilo para el banner de notificación de actualización */
+.update-banner {
+    background-color: #eaf4ff;
+    border-bottom: 1px solid #cce1ff;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.update-banner button {
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+
+
+
+
+/* Estilo para el indicador de múltiples turnos (+1) */
+.multi-turn-indicator {
+    font-size: 0.8em;      /* Letra un 20% más pequeña */
+    font-weight: normal;   /* Quitamos la negrita si la tuviera */
+    opacity: 0.8;          /* Lo hacemos un poco más transparente */
+}
+
+
+
+
+
+
+
+
+
+/* --- Estilos para la Nueva Vista de la Modal --- */
+
+/* Estilo para cada fila de la lista de turnos */
+
+/* Estilo para cada fila de la lista de turnos (con centrado de horario) */
+.shift-list-item {
+    display: grid;
+    /* Tres columnas: flexible, automática, flexible */
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 5px; /* Espacio entre columnas */
+    padding: 5px 0;
+    font-size: 0.9em;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Columna del nombre (se alinea a la derecha) */
+.shift-list-item .name {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* Columna del horario (ya está centrada por el grid) */
+.shift-list-item .time {
+    color: #555;
+}
+
+/* Columna de las horas (se alinea a la izquierda) */
+.shift-list-item .hours {
+    text-align: left;
+    color: #888;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+
+
+
+/* --- Estilo especial para la línea de "Vacaciones" en la modal --- */
+
+/* 1. Centramos el contenedor de la palabra "Vacaciones" */
+.shift-list-item.vacation-day {
+    display: inline-block;
+}
+
+/* 2. Le damos el estilo al texto "Vacaciones" */
+.shift-list-item.vacation-day .name {
+    font-size: 3em;      /* Letra más grande */
+    font-weight: bold;     /* En negrita para que resalte */
+    color: #00796b;        /* Un verde azulado que se nota pero es suave */
+}
+
+
+
+
+/* --- NUEVO DISEÑO PARA EL EDITOR DE CUADRANTES --- */
+
+/* 1. Estilo para la sección de configuración (Fecha y Duración) */
+.quadrant-config-section {
+    background-color: #f7f7f7;
+    padding: 20px;
+    margin: 20px; /* Margen en los lados */
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+/* 2. Estilo para cada "panel" de semana */
+.week-block {
+    background-color: white;
+    margin: 0 20px 20px 20px; /* Margen en los lados y abajo */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden; /* Para que la cabecera respete los bordes */
+}
+
+/* Cabecera de cada semana ("Semana 1", "Semana 2"...) */
+.week-block h3 {
+    background-color: #eaf4ff; /* Fondo azul claro */
+    padding: 10px 15px;
+    margin: 0;
+    font-size: 1em;
+}
+
+/* Espaciado interior para las filas de los días */
+.day-pattern-row {
+    padding: 0 15px;
+}
+
+/* 3. Nuevo diseño para los botones '+' y '-' */
+.add-turn-btn, .remove-turn-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    /* Centramos el símbolo '+' o '-' */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 2px; /* Pequeño ajuste para centrar visualmente */
+}
+
+.add-turn-btn {
+    background-color: #2a9d8f; /* Verde azulado */
+}
+.remove-turn-btn {
+    background-color: #e63946; /* Rojo */
+}
+
+.add-turn-btn:hover, .remove-turn-btn:hover {
+    transform: scale(1.1);
+}
+
+
+
+/* Reducir el tamaño de los botones en las listas (Cuadrantes, Vacaciones, etc.) */
+.quadrant-item .action-button {
+    padding: 10px 10px;    /* Reducimos el espacio interior */
+    font-size: 0.85em;    /* Hacemos la letra un poco más pequeña */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
