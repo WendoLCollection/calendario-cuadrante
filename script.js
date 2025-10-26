@@ -868,21 +868,18 @@ async function loadQuadrants() {
 
 /**
  * Guarda las notas y modificaciones diarias.
- * Si el usuario ha iniciado sesión, las guarda en la nube (Firestore).
- * Si no, las guarda en la memoria local (localStorage).
+ * Ahora sabe cómo manejar órdenes de borrado específicas para Firestore.
  */
-function saveDayNotes() {
-    // 1. Obtenemos el usuario que tiene la sesión iniciada.
+function saveDayNotes(dataToSave = dayNotes) { // <-- Acepta datos específicos para guardar
     const user = auth.currentUser;
 
     if (user) {
         // --- MODO REGISTRADO: Guardar en la Nube ---
         
-        // 2. Apuntamos al documento único de este usuario.
-        db.collection('userData').doc(user.uid).set({
-            // Usamos 'merge: true' para no sobreescribir los otros datos.
-            dayNotes: dayNotes 
-        }, { merge: true })
+        // Usamos .update() en lugar de .set() para poder enviar órdenes de borrado.
+        db.collection('userData').doc(user.uid).update({
+            dayNotes: dataToSave 
+        })
         .catch((error) => {
             console.error("Error al guardar las notas diarias en la nube:", error);
             alert("No se pudieron guardar los cambios en la nube. Revisa tu conexión.");
@@ -890,8 +887,6 @@ function saveDayNotes() {
 
     } else {
         // --- MODO INVITADO: Guardar en Local ---
-        
-        // 3. Si no hay usuario, usamos el método de siempre.
         localStorage.setItem('calendarAppData_dayNotes', JSON.stringify(dayNotes));
     }
 }
@@ -3032,14 +3027,28 @@ if (target.id === 'modal-set-rest-button') { // Usamos el ID del botón que crea
 // Si se pulsa el botón "Restablecer"
 if (target.id === 'modal-reset-button') {
     if (confirm('¿Quieres eliminar los cambios manuales y restablecer el turno del cuadrante?')) {
-        // Borramos la nota/excepción completa para este día.
+        
+        // --- LÓGICA DE BORRADO PARA FIREBASE ---
+        
+        // 1. Borramos la nota de nuestra memoria local.
         delete dayNotes[currentEditingDate];
         
-        saveDayNotes();      // Guardamos el cambio.
-        renderCalendar();    // Actualizamos el calendario.
-        dayModal.classList.add('hidden'); // Cerramos la ventana.
+        // 2. Creamos la orden de borrado explícita para Firebase.
+        // La clave es usar "notación de puntos" para apuntar al campo exacto que queremos borrar.
+        const fieldToDelete = `dayNotes.${currentEditingDate}`;
+        const updateData = {
+            [fieldToDelete]: firebase.firestore.FieldValue.delete()
+        };
+
+        // 3. Llamamos a nuestra función de guardado, pero le pasamos la orden de borrado.
+        saveDayNotes(updateData);
+        
+        // 4. Actualizamos el calendario y cerramos la ventana.
+        renderCalendar();
+        dayModal.classList.add('hidden');
     }
 }
+
 
 });
 
