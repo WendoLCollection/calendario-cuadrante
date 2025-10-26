@@ -1792,8 +1792,6 @@ input:checked + .slider:before {
 }
 
 
-
-
 /* Estilo para el banner de notificación de actualización */
 .update-banner {
     background-color: #eaf4ff;
@@ -1803,13 +1801,14 @@ input:checked + .slider:before {
     justify-content: space-between;
     align-items: center;
     font-weight: bold;
+    /* Nos aseguramos de que no tenga márgenes extraños */
+    margin: 0;
 }
 
 .update-banner button {
     padding: 8px 12px;
     font-size: 0.9em;
 }
-
 
 
 
