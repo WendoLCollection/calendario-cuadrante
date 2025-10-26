@@ -106,7 +106,7 @@ body {
     grid-template-columns: repeat(7, 1fr);
 
     /* --- ESTOS SON LOS CAMBIOS CLAVE --- */
-    gap: 5px; /* 1. Aumentamos la separación entre las celdas */
+    gap: 7px 2px; /* 1. Aumentamos la separación entre las celdas */
     padding: 5px; /* Añadimos un pequeño margen interior */
     background-color: #f0f2f5; /* El color de fondo que se verá en la separación */
 }
@@ -1677,8 +1677,8 @@ input:checked + .slider:before {
     color: #333;
 
     /* --- ESTOS SON LOS CAMBIOS CLAVE --- */
-    border-radius: 5px; /* 2. Redondeamos las esquinas */
-    box-shadow: 0 1px 5px rgba(0,0,0,0.8); /* 3. Añadimos una sombra sutil */
+    border-radius: 9px; /* 2. Redondeamos las esquinas */
+    box-shadow: 0 1px 5px rgba(0,0,0,0.5); /* 3. Añadimos una sombra sutil */
 }
 
 /**

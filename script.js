@@ -3028,22 +3028,24 @@ if (target.id === 'modal-set-rest-button') { // Usamos el ID del botón que crea
 if (target.id === 'modal-reset-button') {
     if (confirm('¿Quieres eliminar los cambios manuales y restablecer el turno del cuadrante?')) {
         
-        // --- LÓGICA DE BORRADO PARA FIREBASE ---
+        // --- LÓGICA DE BORRADO PARA FIREBASE (CORREGIDA) ---
         
-        // 1. Borramos la nota de nuestra memoria local.
+        // 1. Borramos la nota de nuestra memoria local para que la UI se actualice al instante.
         delete dayNotes[currentEditingDate];
         
-        // 2. Creamos la orden de borrado explícita para Firebase.
-        // La clave es usar "notación de puntos" para apuntar al campo exacto que queremos borrar.
-        const fieldToDelete = `dayNotes.${currentEditingDate}`;
-        const updateData = {
-            [fieldToDelete]: firebase.firestore.FieldValue.delete()
-        };
+        // 2. Comprobamos si hay un usuario con sesión iniciada.
+        const user = auth.currentUser;
+        if (user) {
+            // 3. Creamos la "ruta" exacta al dato que queremos borrar usando "notación de puntos".
+            const fieldPath = `dayNotes.${currentEditingDate}`;
 
-        // 3. Llamamos a nuestra función de guardado, pero le pasamos la orden de borrado.
-        saveDayNotes(updateData);
+            // 4. Damos la orden de borrado directamente a la base de datos.
+            db.collection('userData').doc(user.uid).update({
+                [fieldPath]: firebase.firestore.FieldValue.delete()
+            });
+        }
         
-        // 4. Actualizamos el calendario y cerramos la ventana.
+        // 5. Actualizamos el calendario y cerramos la ventana.
         renderCalendar();
         dayModal.classList.add('hidden');
     }
