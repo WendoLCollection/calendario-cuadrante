@@ -1,6 +1,6 @@
 // Definimos el nombre y la versión de nuestro "almacén" (caché).
 // ¡IMPORTANTE! Cada vez que subas una actualización, cambia este número (ej: v3, v4...).
-const CACHE_NAME = 'turnos-cache-v1';
+const CACHE_NAME = 'turnos-cache-v10';
 
 // Lista de los archivos fundamentales de nuestra aplicación.
 const urlsToCache = [
