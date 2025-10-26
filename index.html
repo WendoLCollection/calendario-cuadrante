@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Turnos</title>
+    
+    <link rel="stylesheet" href="style.css?v=10">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.png" type="image/png">
+</head>
+
+<body>
+
+<!-- *************** LOGIN  *************************-->
+
+<div id="auth-view" class="hidden">
+  <div class="auth-card">
+    <header class="view-header">
+        <button id="back-to-app-from-auth-button" class="header-button">←</button>
+        <h1 class="header-title">Volver al Calendario</h1>
+		
+		
+		
+		
+    </header>
+	
+    <div class="auth-container">
+	
+	
+
+	
+        <div id="login-form">
+            <h2>Iniciar Sesión</h2>
+				<div class="form-group">
+					<label for="login-name">Nombre de Usuario</label>
+					<input type="text" id="login-name" required>
+				</div>
+			
+            <div class="form-group">
+                <label for="login-password">Contraseña</label>
+                <input type="password" id="login-password" required>
+            </div>
+			
+			<div class="form-group-checkbox" style="justify-content: center;">
+				<input type="checkbox" id="remember-me-checkbox">
+				<label for="remember-me-checkbox">Recordarme</label>
+			</div>
+			
+            <p id="login-error" class="error-message hidden"></p>
+		<button id="login-button" class="button-primary">Entrar</button> 
+            <p class="auth-switch">¿No tienes cuenta? <a href="#" id="show-register">Regístrate</a></p>
+			<p class="auth-switch forgot-password"><a href="#" id="forgot-password-link">¿Has olvidado tu contraseña?</a></p>
+			
+			
+        </div>
+
+        <div id="register-form" class="hidden">
+            <h2>Crear Cuenta</h2>
+			
+			    <div class="form-group">
+					<label for="register-name">Nombre de Usuario</label>
+					<input type="text" id="register-name" required>
+				</div>
+			
+            <div class="form-group">
+                <label for="register-email">Correo Electrónico</label>
+                <input type="email" id="register-email" required>
+            </div>
+			
+            <div class="form-group">
+                <label for="register-password">Contraseña</label>
+                <input type="password" id="register-password" required>
+            </div>
+			
+             <p id="register-error" class="error-message hidden"></p>
+            <button id="register-button" class="button-primary">Registrarse</button>
+            <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="show-login">Inicia sesión</a></p>
+        </div>
+		
+    </div>
+	
+  </div>
+</div>
+
+<!-- *************** LOGIN  *************************-->
+
+
+
+
+
+
+
+
+
+<div id="app-container">
+        
+        <header id="app-header">
+            <div id="header-title-container"> </div>
+            <button id="settings-button" class="header-button">Ajustes</button>
+        </header>
+
+        <main id="calendar-view">
+            <div id="month-selector">
+                <button id="prev-month-button">&lt;</button>
+                <h2 id="current-month-display">cargando...</h2>
+                <button id="next-month-button">&gt;</button>
+            </div>
+			
+			<div id="weekdays">
+				<div class="weekday">Lun</div>
+				<div class="weekday">Mar</div>
+				<div class="weekday">Mié</div>
+				<div class="weekday">Jue</div>
+				<div class="weekday">Vie</div>
+				<div class="weekday">Sáb</div>
+				<div class="weekday sunday-text">Dom</div>
+			</div>
+
+	
+			
+			<div id="calendar-grid">
+							</div>
+		 </main> 
+					
+					<div id="settings-view" class="hidden">
+						
+						<header id="settings-header">
+							<button id="back-to-calendar-button" class="header-button">←</button>
+							<h1 class="header-title">Ajustes</h1>
+						</header>
+						
+			<div id="update-notification" class="update-banner hidden">
+				<span>¡Nueva versión disponible!</span>
+				<button id="update-app-button" class="button-primary">Actualizar Ahora</button>
+			</div>						
+					
+						
+								<main id="settings-content">
+									<ul class="settings-menu">
+										<li class="settings-item">
+											<div class="menu-icon">🎨</div>
+											<div class="menu-label">Turnos</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">🔄</div>
+											<div class="menu-label">Cuadrante</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">🌴</div>
+											<div class="menu-label">Vacaciones</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">✅</div>
+											<div class="menu-label">Dia de cierre</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">💶</div>
+											<div class="menu-label">Horas Extras</div>
+										</li>
+										<li class="settings-item">
+											<div class="menu-icon">📊</div>
+											<div class="menu-label">Estadísticas</div>
+										</li>
+										</ul>
+
+
+								</main>
+
+							    <div class="info-footer">
+								
+									<div id="logout-menu-button" class="settings-item">
+										<div class="menu-icon">⛔​</div>
+										<div class="menu-label">Cerrar Sesión</div>
+									</div>
+													
+									
+									<div class="settings-item disabled">
+											<div class="menu-icon">ℹ️</div>
+											<div class="menu-label">Información</div>
+									</div>
+																		
+								</div>						
+						
+						
+					
+					</div> 
+					
+<!-- *************** Turnos *************************-->			
+<div id="shifts-list-view" class="hidden">
+    
+		<header class="view-header">
+			<button id="back-to-settings-button" class="header-button">←</button>
+			<h1 class="header-title">Mis Turnos</h1>
+		</header>
+		<div class="add-button-container">
+			<button id="add-new-shift-button" class="button-primary">+ Añadir nuevo turno</button>
+
+		</div>
+
+    <main id="shifts-list-container">
+	
+  <p class="explanation-text warning">
+    <strong>Atención:</strong> </br>
+	Estás creando un patrón de rotación. Los turnos que definas aquí se repetirán cíclicamente en el calendario. 
+	</br>
+	Ahora puedes Añadir/Editar varios turnos en en el mismo dia.
+</p>      
+        <div class="shift-item">
+
+	
+				
+
+        </div>
+        </main>
+</div>
+
+<div id="shift-form-view" class="hidden">
+
+    <header class="view-header">
+        <button id="cancel-shift-form-button" class="header-button">←</button>
+        <h1 id="shift-form-title" class="header-title">Añadir Turno</h1>
+    </header>
+
+    <main>
+	
+	
+        <form id="shift-form">
+		  <input type="hidden" id="shift-id-input">
+            <div class="form-group">
+                <label for="shift-name">Nombre del turno</label>
+                <input type="text" id="shift-name" required>
+            </div>
+
+            <div class="form-group-inline">
+                <div class="form-group">
+                    <label for="shift-start-time">Hora de inicio</label>
+                    <input type="time" id="shift-start-time" required>
+                </div>
+                <div class="form-group">
+                    <label for="shift-end-time">Hora de fin</label>
+                    <input type="time" id="shift-end-time" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Color</label>
+                <div id="color-selector" required>
+                    </div>
+            </div>
+
+            <div class="form-group">
+                <label for="shift-comments">Comentarios (opcional)</label>
+                <textarea id="shift-comments" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group-checkbox">
+                <input type="checkbox" id="shift-is-paid">
+                <label for="shift-is-paid">Este turno se paga por horas</label>
+            </div>
+
+            <div id="hourly-rate-container" class="hidden">
+                <div class="form-group">
+                    <label for="shift-hourly-rate">Tarifa de hora extra</label>
+                    <select id="shift-hourly-rate">
+
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Guardar</button>
+            </div>
+        </form>
+    </main>
+
+</div>
+<!-- *************** Turnos *************************-->
+
+
+
+
+<!-- *************** Cuadrantes *************************-->
+
+<div id="quadrant-list-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-quadrant-button" class="header-button">←</button>
+        <h1 class="header-title">Mis Cuadrantes</h1>
+    </header>
+
+    <div class="add-button-container">
+        <button id="add-new-quadrant-button" class="button-primary">+ Añadir nuevo cuadrante</button>
+    </div>
+
+    <main id="quadrant-list-container">
+	
+<p class="explanation-text warning">
+    <strong>Atención:</strong> </br>
+	Estás creando un patrón de rotación. Los turnos que definas aquí se repetirán cíclicamente en el calendario. 
+	</br>
+	Ahora puedes Añadir/Editar varios turnos en en el mismo dia.
+</p>		
+	
+        
+		<div class="content-section">
+            <h2>Cuadrante Activo</h2>
+            <div id="active-quadrant-display">
+                <p class="empty-list-message">Aún no has activado ningún cuadrante.</p>
+            </div>
+        </div>
+
+    
+		
+		<div class="content-section">
+            <h2>Todos los Cuadrantes</h2>
+            <div id="all-quadrants-list">
+                </div>
+        </div>
+    </main>
+</div>
+
+<div id="quadrant-form-view" class="hidden">
+
+    <header class="view-header">
+        <button id="cancel-quadrant-form-button" class="header-button">←</button>
+        <h1 id="quadrant-form-title" class="header-title">Añadir Cuadrante</h1>
+    </header>
+
+    <main>
+        <form id="quadrant-form">
+		  <input type="hidden" id="quadrant-id-input">
+
+		
+<div class="quadrant-config-section">
+    <div class="form-group-inline">
+        <div class="form-group">
+            <label for="quadrant-start-date">Fecha de inicio </label>
+            <input type="date" id="quadrant-start-date" required>
+        </div>
+        <div class="form-group">
+            <label for="quadrant-weeks">Duración (en semanas)</label>
+            <input type="number" id="quadrant-weeks" value="3" min="1" required>
+        </div>
+    </div>
+</div>			
+			
+
+
+            
+				<div id="week-pattern-container" class="form-group">
+					</div>
+					
+
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Guardar Cuadrante</button>
+            </div>
+        </form>
+    </main>
+</div>
+<!-- *************** Cuadrantes *************************-->
+
+<!-- *************** Vacaciones *************************-->
+<div id="vacations-list-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-vacations-button" class="header-button">←</button>
+        <h1 class="header-title">Periodos de Vacaciones</h1>
+    </header>
+
+    <div class="add-button-container">
+        <button id="add-new-vacation-button" class="button-primary">+ Añadir vacaciones</button>
+    </div>
+	
+<p class="explanation-text warning">
+        <strong>Atención:</strong> <br> 
+Aqui añadiremos nuestros periodos de vacaciones.
+<br> 
+en el calendario saldrá con una 🌴
+
+    </p>	
+
+    <main id="vacations-list-container" class="content-section">
+        </main>
+</div>
+
+<div id="vacation-form-view" class="hidden">
+
+    <header class="view-header">
+        <button id="cancel-vacation-form-button" class="header-button">←</button>
+        <h1 id="vacation-form-title" class="header-title">Añadir Vacaciones</h1>
+    </header>
+
+    <main>
+        <form id="vacation-form">
+            <input type="hidden" id="vacation-id-input">
+
+            <div class="form-group">
+                <label for="vacation-name">Nombre descriptivo</label>
+                <input type="text" id="vacation-name" placeholder="Ej: Verano 2025" required>
+            </div>
+
+            <div class="form-group-inline">
+                <div class="form-group">
+                    <label for="vacation-start-date">Fecha de inicio</label>
+                    <input type="date" id="vacation-start-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="vacation-end-date">Fecha de fin</label>
+                    <input type="date" id="vacation-end-date" required>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="button-primary">Guardar Periodo</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<!-- *************** Vacaciones *************************-->
+
+<!-- *************** Cierre *************************-->
+<div id="shift-closure-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-closure-button" class="header-button">←</button>
+        <h1 class="header-title">Días de Cierre</h1>
+    </header>
+
+<main id="shift-closure-container">
+    <p class="explanation-text">
+        Para cada mes, selecciona el día en que se realiza el cierre. 
+    </p>
+    <div id="monthly-closure-list">
+        </div>
+</main>
+
+</div>
+
+<!-- *************** Cierre *************************-->
+
+<!-- *************** Horas extra  *************************-->
+
+<div id="overtime-list-view" class="hidden">
+    
+    <header class="view-header">
+        <button id="back-to-settings-from-overtime-button" class="header-button">←</button>
+        <h1 class="header-title">Tarifas Horas Extras</h1>
+    </header>
+
+    <div class="add-button-container">
+        <button id="add-new-overtime-button" class="button-primary">+ Añadir nueva tarifa</button>
+    </div>
+	
+<p class="explanation-text warning">
+        <strong>Atención:</strong> <br> Aquí solo se crean las <em>tarifas</em> de las horas extras (ej: Festivo, Nocturna). Para <em>añadir</em> horas a un día concreto, debes hacerlo desde la ventana de edición de ese día en el calendario.
+    </p>
+	
+	
+	<main id="overtime-list-container" class="content-section">
+        </main>
+
+</div>
+
+<!-- *************** Horas extra   *************************-->
+
+
+<!-- *************** Estadísticas   *************************-->
+
+<div id="stats-view" class="view hidden">
+    <header class="view-header">
+        <button id="back-to-settings-from-stats-button" class="header-button">←</button>
+        <h1 class="header-title">Estadísticas de Horas</h1>
+    </header>
+
+<main id="stats-container" class="content-section">
+        <div class="stats-section">
+            <h2>Resumen de Horas por Cuadrante</h2>
+            <div id="quadrant-summary-container">
+                </div>
+        </div>
+
+			<div class="stats-section">
+				<h2>Resumen Mensual y Anual</h2>
+				
+				<div id="summary-year-selector">
+					<button id="prev-year-summary-button">&lt;</button>
+					<h3 id="current-year-summary-display">2025</h3>
+					<button id="next-year-summary-button">&gt;</button>
+				</div>
+
+				<div class="mode-toggle">
+					<span>Mes Completo</span>
+					<label class="switch">
+						<input type="checkbox" id="summary-mode-toggle">
+						<span class="slider"></span>
+					</label>
+					<span>De Cierre a Cierre</span>
+				</div>
+
+				<div id="summary-results-container">
+					</div>
+			</div>
+		
+    </main>
+</div>
+
+<!-- *************** Estadísticas   *************************-->
+
+
+
+
+
+<!-- *************** ventana modal*************************-->
+<div id="day-modal" class="modal-backdrop hidden">
+    <div class="modal-content"> 
+	
+		<header class="modal-header">
+			<div class="modal-title-container">
+				<h2 id="modal-date"></h2>
+				<p id="modal-holiday-name" class="hidden"></p>
+			</div>
+			<button id="modal-close-button" class="header-button">×</button>
+		</header>
+		
+<main class="modal-body">
+    <div id="modal-view-section">
+	
+	
+<div class="modal-section">
+    <h3>Información del Día</h3>
+    
+    <div id="modal-shift-list-container">
+        </div>
+
+    <div class="info-grid totals-grid">
+        <div class="info-item">
+            <span>Horas Totales:</span>
+            <span id="modal-total-hours">--</span>
+        </div>
+        <div class="info-item">
+            <span>Ganancias:</span>
+            <span id="modal-earnings">--</span>
+        </div>
+    </div>
+</div>
+		
+		
+
+		<div id="modal-closure-summary" class="modal-section hidden">
+			<h3>Resumen del Periodo de Cierre</h3>
+			
+			<div class="info-grid">
+				<div class="info-item">
+					<span>Dietas:</span>
+					<span id="modal-worked-days">--</span>
+				</div>
+				<div class="info-item">
+					<span>Ganancias:</span>
+					<span id="modal-total-earnings">--</span>
+				</div>
+			</div>
+
+			<div id="earnings-breakdown-container">
+				<h4>Desglose de Ganancias:</h4>
+				<ul id="earnings-breakdown-list">
+					</ul>
+			</div>
+		</div>
+
+        <div class="modal-section">
+            <h3>Comentarios</h3>
+            <p id="modal-shift-comments-display" class="comment-block shift-comment"></p>
+            <p id="modal-daily-comments-display" class="comment-block daily-comment"></p>
+        </div>
+    </div>
+
+<div id="modal-edit-section" class="hidden">
+
+    <div class="form-group">
+        <label for="modal-edit-comment">Añadir/Editar Comentario del Día</label>
+        <textarea id="modal-edit-comment" rows="3"></textarea>
+    </div>
+
+
+    <div class="form-group">
+        <label for="override-shift-name">Nombre del Turno (solo para este día)</label>
+        <input type="text" id="override-shift-name">
+    </div>
+    <div class="form-group-inline">
+        <div class="form-group">
+            <label for="override-start-time">Hora de inicio</label>
+            <input type="time" id="override-start-time">
+        </div>
+        <div class="form-group">
+            <label for="override-end-time">Hora de fin</label>
+            <input type="time" id="override-end-time">
+        </div>
+    </div>
+	
+    <div class="form-group-checkbox">
+        <input type="checkbox" id="override-is-paid">
+        <label for="override-is-paid">Este turno se paga por horas</label>
+    </div>
+		<div id="override-hourly-rate-container" class="form-group hidden">
+		<label for="override-hourly-rate">Seleccionar Tarifa</label>
+		<select id="override-hourly-rate">
+			</select>
+	</div>
+	
+
+	
+	
+    <div class="form-group-inline">
+        <div class="form-group">
+            <label for="extra-hours-input">Horas Extra</label>
+            <input type="number" id="extra-hours-input" min="0" step="0.25" placeholder="Ej: 2.5">
+        </div>
+        <div class="form-group">
+            <label for="extra-hours-rate-select">Tarifa H. Extra</label>
+            <select id="extra-hours-rate-select"></select>
+        </div>
+    </div>	
+	
+	
+</div>
+	
+</main>
+        <footer class="modal-footer">
+			<button id="modal-edit-button" class="action-button">Editar</button>
+            <button id="modal-close-button-footer" class="button-primary">Cerrar</button>
+			
+        </footer>
+		
+    </div>
+</div>
+<!-- *************** ventana modal *************************-->
+
+
+<!-- *************** tutorial *************************-->
+
+<div id="welcome-tutorial" class="modal-backdrop hidden">
+    <div class="tutorial-content">
+        <h2 id="tutorial-title"></h2>
+        <div id="tutorial-body">
+            </div>
+        <button id="close-tutorial-button" class="button-primary">Entendido</button>
+    </div>
+</div>
+
+<!-- *************** tutorial *************************-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- *************** Mi info *************************--><!-- *************** Mi info *************************--><!-- *************** Mi info *************************-->						
+			
+							<footer class="settings-footer ">
+							
+								<img src="logo.png" alt="Mi Logo" class="footer-logo">
+								<p class="footer-text">
+									© 2025
+									WendoL Collection  -  
+									
+									<a href="mailto:wendolcollection@gmail.com">CONTACTO</a>
+									
+								</p>
+							</footer>						
+<!-- *************** Mi info *************************--><!-- *************** Mi info *************************--><!-- *************** Mi info *************************-->
+
+
+
+
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script src="script.js?v=10"></script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        let newWorker;
+
+        // 1. Registramos nuestro Service Worker
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            // 2. Comprobamos si hay una nueva versión esperando
+            if (reg.waiting) {
+                newWorker = reg.waiting;
+                showUpdateBanner(); // Si la hay, mostramos el aviso
+            }
+
+            // 3. Escuchamos si llega una nueva versión MIENTRAS usamos la app
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    // Si el nuevo worker ha terminado de instalarse y está "esperando"...
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdateBanner(); // ...mostramos el aviso.
+                    }
+                });
+            });
+        });
+
+        // 4. Función para mostrar el aviso de actualización
+        function showUpdateBanner() {
+            const banner = document.getElementById('update-notification');
+            const updateButton = document.getElementById('update-app-button');
+            if (banner) banner.classList.remove('hidden');
+
+            if (updateButton) {
+                updateButton.addEventListener('click', () => {
+                    // Al pulsar, le decimos al nuevo worker que tome el control
+                    newWorker.postMessage({ action: 'skipWaiting' });
+                });
+            }
+        }
+
+        // 5. Recargamos la página cuando el nuevo worker toma el control
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            window.location.reload();
+            refreshing = true;
+        });
+    }
+</script>
+
+</body>
+</html>
