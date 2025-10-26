@@ -1,6 +1,6 @@
 // Definimos el nombre y la versión de nuestro "almacén" (caché).
 // ¡IMPORTANTE! Cada vez que subas una actualización, cambia este número (ej: v3, v4...).
-const CACHE_NAME = 'turnos-cache-v12';
+const CACHE_NAME = 'turnos-cache-v13';
 
 // Lista de los archivos fundamentales de nuestra aplicación.
 const urlsToCache = [
@@ -19,7 +19,7 @@ const urlsToCache = [
 // Se ejecuta cuando el navegador descarga un nuevo Service Worker.
 self.addEventListener('install', event => {
     // Orden para que el nuevo Service Worker se active inmediatamente sin esperar.
-    self.skipWaiting();
+   // self.skipWaiting();
 
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -67,4 +67,15 @@ self.addEventListener('fetch', event => {
                 return response || fetch(event.request);
             })
     );
+});
+
+
+// --- NUEVO: Oyente de Mensajes ---
+// Se activa cuando la página le envía un mensaje al Service Worker.
+self.addEventListener('message', event => {
+    // Comprobamos si el mensaje es la orden para "saltar la espera".
+    if (event.data && event.data.action === 'skipWaiting') {
+        console.log('Recibida orden de skipWaiting. Activando nuevo Service Worker...');
+        self.skipWaiting(); // Le decimos al nuevo SW que tome el control inmediatamente.
+    }
 });
