@@ -137,7 +137,11 @@ const quadrantForm = document.getElementById('quadrant-form');
 
 const vacationsListContainer = document.getElementById('vacations-list-container');
 
+const infoView = document.getElementById('info-view');
+const menuItemInfo = document.getElementById('menu-item-info');
+const backToSettingsFromInfoButton = document.getElementById('back-to-settings-from-info-button');
 
+const notificationsToggle = document.getElementById('notifications-toggle');
 
 
 
@@ -1407,6 +1411,9 @@ auth.onAuthStateChanged(async (user) => {
 			
 			prefillUsername();
 			renderCalendar();
+			
+			checkDailyAlerts();
+	
 		}
 });
 
@@ -3074,6 +3081,18 @@ backToSettingsFromStatsButton.addEventListener('click', () => {
 });
 
 
+// Evento para "ℹ️ Info"
+menuItemInfo.addEventListener('click', () => {
+    settingsView.classList.add('hidden');
+    infoView.classList.remove('hidden');
+});
+
+// Evento para volver desde Información
+backToSettingsFromInfoButton.addEventListener('click', () => {
+    infoView.classList.add('hidden');
+    settingsView.classList.remove('hidden');
+});
+
 
  
 
@@ -3659,3 +3678,74 @@ forgotPasswordLink.addEventListener('click', (event) => {
 
 
 
+// ===============================================================
+// --- LÓGICA DE NOTIFICACIONES ---
+// ===============================================================
+
+// 1. AL CAMBIAR EL INTERRUPTOR
+if (notificationsToggle) {
+    // Al cargar la página, ponemos el interruptor como estaba guardado
+    notificationsToggle.checked = localStorage.getItem('notificationsEnabled') === 'true';
+
+    notificationsToggle.addEventListener('change', () => {
+        if (notificationsToggle.checked) {
+            // Pedimos permiso al navegador
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    localStorage.setItem('notificationsEnabled', 'true');
+                    // Prueba inmediata para confirmar
+                    new Notification("✅ Notificaciones activadas", { 
+                        body: "Te avisaremos los días de cierre y cambios manuales.",
+                        icon: "favicon.png"
+                    });
+                } else {
+                    notificationsToggle.checked = false;
+                    alert("No has dado permiso para recibir notificaciones en tu dispositivo.");
+                    localStorage.setItem('notificationsEnabled', 'false');
+                }
+            });
+        } else {
+            localStorage.setItem('notificationsEnabled', 'false');
+        }
+    });
+}
+
+// 2. EL CEREBRO: Comprobar si toca aviso hoy
+function checkDailyAlerts() {
+    const isEnabled = localStorage.getItem('notificationsEnabled') === 'true';
+    
+    // Si están desactivadas o no tenemos permiso, no hacemos nada
+    if (!isEnabled || Notification.permission !== 'granted') return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Evitamos repetir la notificación el mismo día
+    const lastAlertDate = localStorage.getItem('lastAlertDate');
+    const todayStr = today.toDateString();
+
+    if (lastAlertDate === todayStr) return; // Ya avisamos hoy
+
+    // Comprobamos si hay algo importante hoy
+    const isClosure = isShiftClosureDay(today);
+    const isOverridden = isDayOverridden(today);
+
+    if (isClosure || isOverridden) {
+        let title = "📅 Aviso del Calendario";
+        let body = "";
+
+        if (isClosure && isOverridden) {
+            body = "⚠️ Hoy es CIERRE DE TURNO y tienes cambios manuales (📌).";
+        } else if (isClosure) {
+            body = "✅ Recordatorio: Hoy es día de CIERRE DE TURNO.";
+        } else if (isOverridden) {
+            body = "📌 Recordatorio: Hoy tienes cambios manuales en tu turno.";
+        }
+
+        // Lanzamos la notificación
+        new Notification(title, { body: body, icon: "favicon.png" });
+        
+        // Marcamos que ya hemos avisado hoy para no ser pesados
+        localStorage.setItem('lastAlertDate', todayStr);
+    }
+}

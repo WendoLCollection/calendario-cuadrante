@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Turnos</title>
     
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
     
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="favicon.png" type="image/png">
@@ -178,7 +178,7 @@
 									</div>
 													
 									
-									<div class="settings-item disabled">
+									<div id="menu-item-info" class="settings-item">
 											<div class="menu-icon">ℹ️</div>
 											<div class="menu-label">Información</div>
 									</div>
@@ -512,8 +512,70 @@ en el calendario saldrá con una 🌴
 <!-- *************** Estadísticas   *************************-->
 
 
+<!-- *************** Información   *************************-->
 
 
+<div id="info-view" class="view hidden">
+    <header class="view-header">
+        <button id="back-to-settings-from-info-button" class="header-button">←</button>
+        <h1 class="header-title">Información</h1>
+    </header>
+
+    <main class="content-section">
+	
+	<div class="stats-section" style="text-align: center;">
+            <h3>🔔 Notificaciones Diarias</h3>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+                Recibe un aviso al abrir la app si hoy es día de cierre o hay cambios manuales.
+            </p>
+            <div class="form-group-checkbox" style="justify-content: center;">
+                <label class="switch">
+                    <input type="checkbox" id="notifications-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span style="margin-left: 15px; font-weight: bold;">Activar Avisos</span>
+            </div>
+        </div>
+		
+	
+        
+        <div class="stats-section" style="text-align: left;">
+            <h2>📖 Guía Rápida</h2>
+            <p>Sigue estos pasos para configurar tu calendario:</p>
+            <ol class="tutorial-steps">
+                <li><span>1</span> Ve a <strong>Configuración > 🎨 Turnos</strong> y crea tus tipos de turno (ej: Mañana, Tarde).</li>
+                <li><span>2</span> Ve a <strong>Configuración > 🔄 Cuadrante</strong>. Crea uno nuevo, define tus turnos y fechas.</li>
+                <li><span>3</span> ¡Listo! El calendario se rellenará automáticamente.</li>
+            </ol>
+            <p>
+                <strong>Tip:</strong> Pulsa en cualquier día del calendario para ver detalles, añadir notas o hacer cambios manuales (ej: horas extras).
+            </p>
+        </div>
+
+        <div class="stats-section" style="text-align: left;">
+            <h2>🔍 Leyenda de Iconos</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 10px;">📌 <strong>Chincheta:</strong> Día editado manualmente.</li>
+                <li style="margin-bottom: 10px;">💶 <strong>Billete:</strong> Turno con pago extra.</li>
+                <li style="margin-bottom: 10px;">🌴 <strong>Palmera:</strong> Periodo de vacaciones.</li>
+                <li style="margin-bottom: 10px;">✅ <strong>Borde Verde:</strong> Día de cierre de nómina.</li>
+            </ul>
+        </div>
+
+        <div class="stats-section" style="text-align: center;">
+            <img src="logo.png" alt="Logo" style="width: 50px; margin-bottom: 10px;">
+            <h3>Calendario de Turnos</h3>
+            <p style="color: #666;">Versión 1.0 (Nube Activada)</p>
+            <p style="font-size: 0.9em; margin-top: 15px;">
+                Desarrollado por <strong>WendoL Collection</strong><br>
+                <a href="mailto:wendolcollection@gmail.com" style="color: #4a90e2; text-decoration: none;">Contactar con soporte</a>
+            </p>
+        </div>
+
+    </main>
+</div>
+
+<!-- *************** Información   *************************-->
 
 <!-- *************** ventana modal*************************-->
 <div id="day-modal" class="modal-backdrop hidden">
@@ -685,7 +747,7 @@ en el calendario saldrá con una 🌴
 								<img src="logo.png" alt="Mi Logo" class="footer-logo">
 								<p class="footer-text">
 									© 2025
-									WendoL Collection v=11  -  
+									WendoL Collection v=12  -  
 									
 									<a href="mailto:wendolcollection@gmail.com">CONTACTO</a>
 									
@@ -703,7 +765,7 @@ en el calendario saldrá con una 🌴
 <script defer src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<script defer src="script.js?v=11"></script>
+<script defer src="script.js?v=12"></script>
 
 <script>
     if ('serviceWorker' in navigator) {
