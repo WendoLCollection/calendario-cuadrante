@@ -3096,9 +3096,10 @@ function getPreviousClosureDate(currentClosureDate) {
     return null;
 }
 
+
 /**
- * Calcula los días trabajados, las ganancias totales y un desglose detallado
- * de cada ingreso en un rango de fechas.
+ * Calcula los días trabajados (dietas), las ganancias totales y el desglose
+ * en un rango de fechas. Versión compatible con múltiples turnos.
  */
 function calculatePeriodSummary(startDate, endDate) {
     let workedDays = 0;
@@ -3108,50 +3109,67 @@ function calculatePeriodSummary(startDate, endDate) {
 
     while (currentDate <= endDate) {
         const onVacation = isDateOnVacation(currentDate);
-        const turn = getTurnForDate(currentDate);
+        // Usamos la función que nos da TODOS los turnos del día.
+        const allTurns = getAllTurnsForDate(currentDate);
         
-        if (turn && turn.name !== 'Descanso' && !onVacation) {
+        // --- LÓGICA PARA CONTAR DIETAS (DÍAS TRABAJADOS) ---
+        // Un día se considera trabajado si:
+        // 1. NO es vacaciones.
+        // 2. Tiene al menos un turno asignado.
+        // 3. Al menos uno de esos turnos NO es "Descanso".
+        const hasWorkTurn = allTurns.length > 0 && allTurns.some(turn => turn.name !== 'Descanso');
+
+        if (!onVacation && hasWorkTurn) {
             workedDays++;
+        }
 
-            // --- LÓGICA MODIFICADA PARA EL DESGLOSE ---
+        // --- LÓGICA DE GANANCIAS Y DESGLOSE ---
+        if (!onVacation) {
+            // 1. Recorremos TODOS los turnos del día para sumar sus ganancias individuales.
+            allTurns.forEach(turn => {
+                // Calculamos SOLO las ganancias de este turno (sin horas extras del día).
+                const turnEarningsStr = calculateEarnings(turn, currentDate, true, false);
+                const turnAmount = parseFloat(turnEarningsStr);
 
-            // 1. Ganancias del turno principal (si se paga por horas)
-            if (turn.isPaid && turn.overtimeRateId) {
-                const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
-                if (rate) {
-                    const hours = parseFloat(calculateTotalHours(turn.startTime, turn.endTime));
-                    if (!isNaN(hours)) {
-                        const amount = hours * rate.price;
-                        if (amount > 0) {
-                            totalEarnings += amount;
-                            earningsBreakdown.push({
-                                date: new Date(currentDate),
-                                // Nuevo formato del texto: "Mañana (Tarifa Festivo)"
-                                source: `${turn.name} (${rate.name})`,
-                                amount: amount
-                            });
-                        }
+                if (turnAmount > 0) {
+                    totalEarnings += turnAmount;
+                    
+                    // Buscamos el nombre de la tarifa para el desglose.
+                    let sourceName = turn.name;
+                    if (turn.overtimeRateId) {
+                        const rate = overtimeRates.find(r => r.id === Number(turn.overtimeRateId));
+                        if (rate) sourceName += ` (${rate.name})`;
                     }
-                }
-            }
 
-            // 2. Ganancias de las horas extras del día
-            const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-            const dayNote = dayNotes[dateKey];
-            if (dayNote && dayNote.extraHours) {
-                const rate = overtimeRates.find(r => r.id === Number(dayNote.extraHours.rateId));
-                if (rate) {
-                    const amount = dayNote.extraHours.hours * rate.price;
-                    if (amount > 0) {
-                        totalEarnings += amount;
-                        earningsBreakdown.push({
-                            date: new Date(currentDate),
-                            // Nuevo formato del texto: "Horas Extra (Tarifa Nocturna)"
-                            source: `Horas Extra (${rate.name})`,
-                            amount: amount
-                        });
-                    }
+                    earningsBreakdown.push({
+                        date: new Date(currentDate),
+                        source: sourceName,
+                        amount: turnAmount
+                    });
                 }
+            });
+
+            // 2. Calculamos las ganancias de las horas extras (una vez por día).
+            const extraEarningsStr = calculateEarnings(null, currentDate, false, true);
+            const extraAmount = parseFloat(extraEarningsStr);
+
+            if (extraAmount > 0) {
+                totalEarnings += extraAmount;
+                
+                // Buscamos el nombre de la tarifa de las horas extras.
+                const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+                const dayNote = dayNotes[dateKey];
+                let rateName = '';
+                if (dayNote && dayNote.extraHours) {
+                    const rate = overtimeRates.find(r => r.id === Number(dayNote.extraHours.rateId));
+                    if (rate) rateName = ` (${rate.name})`;
+                }
+
+                earningsBreakdown.push({
+                    date: new Date(currentDate),
+                    source: `Horas Extra${rateName}`,
+                    amount: extraAmount
+                });
             }
         }
         
@@ -3159,6 +3177,7 @@ function calculatePeriodSummary(startDate, endDate) {
     }
     return { workedDays, totalEarnings, earningsBreakdown };
 }
+
 
 /**
  * Calcula el total de horas para cada semana de un patrón de cuadrante.
